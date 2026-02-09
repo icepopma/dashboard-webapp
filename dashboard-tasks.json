@@ -1,65 +1,121 @@
 {
   "tasks": {
-    "task-002-shadcn": {
-      "name": "配置 shadcn/ui",
-      "command": "cd /root/.openclaw/workspace/notes/ideas/dashboard-webapp && npx shadcn-ui@latest init -y",
-      "priority": 10,
-      "timeout": 600,
-      "retries": 2,
-      "dependencies": []
-    },
-    "task-003-supabase": {
-      "name": "配置 Supabase",
-      "command": "cd /root/.openclaw/workspace/notes/ideas/dashboard-webapp && node scripts/task-003-supabase.js",
+    "task-013-idea-card": {
+      "name": "创建 IdeaCard 组件",
+      "command": "cd /root/.openclaw/workspace/notes/ideas/dashboard-webapp-clean && node scripts/task-013-idea-card.js",
       "priority": 10,
       "timeout": 300,
       "retries": 2,
       "dependencies": []
     },
-    "task-004-db-tables": {
-      "name": "创建数据库表",
-      "command": "cd /root/.openclaw/workspace/notes/ideas/dashboard-webapp && node scripts/task-004-db-tables.js",
-      "priority": 9,
-      "timeout": 600,
-      "retries": 3,
-      "dependencies": ["task-003-supabase"]
-    },
-    "task-005-docker": {
-      "name": "创建 Docker 配置",
-      "command": "cd /root/.openclaw/workspace/notes/ideas/dashboard-webapp && node scripts/task-005-docker.js",
-      "priority": 9,
+    "task-021-edit": {
+      "name": "添加编辑功能",
+      "command": "cd /root/.openclaw/workspace/notes/ideas/dashboard-webapp-clean && node scripts/task-021-edit.js",
+      "priority": 10,
       "timeout": 300,
       "retries": 2,
-      "dependencies": ["task-003-supabase"]
+      "dependencies": ["task-020-tasks-list"]
     },
-    "task-006-env": {
-      "name": "配置环境变量",
-      "command": "cd /root/.openclaw/workspace/notes/ideas/dashboard-webapp && node scripts/task-006-env.js",
-      "priority": 8,
+    "task-022-progress-bar": {
+      "name": "添加进度条显示",
+      "command": "cd /root/.openclaw/workspace/notes/ideas/dashboard-webapp-clean && node scripts/task-022-progress-bar.js",
+      "priority": 10,
       "timeout": 300,
       "retries": 2,
-      "dependencies": ["task-004-db-tables", "task-005-docker"]
+      "dependencies": ["task-020-tasks-list"]
     },
-    "task-007-client": {
-      "name": "创建 Supabase 客户端",
-      "command": "cd /root/.openclaw/workspace/notes/ideas/dashboard-webapp && npm install @supabase/supabase-js && node scripts/task-007-client.js",
-      "priority": 8,
+    "task-023-create-new-idea": {
+      "name": "实现创建新 Idea 功能",
+      "command": "cd /root/.openclaw/workspace/notes/ideas/dashboard-webapp-clean && node scripts/task-016-dialog.js",
+      "priority": 10,
       "timeout": 600,
-      "retries": 3,
-      "dependencies": ["task-006-env"]
-    },
-    "task-008-api-routes": {
-      "name": "创建 API Routes",
-      "command": "cd /root/.openclaw/workspace/notes/ideas/dashboard-webapp && node scripts/task-008-api.js",
-      "priority": 7,
-      "timeout": 900,
-      "retries": 3,
+      "retries": 2,
       "dependencies": ["task-007-client"]
+    },
+    "task-024-create-idea-api": {
+      "name": "创建新 Idea API",
+      "command": "cd /root/.openclaw/workspace/notes/ideas/dashboard-webapp-clean && node scripts/create-idea-api.js",
+      "priority": 9,
+      "timeout": 300,
+      "retries": 2,
+      "dependencies": ["task-023-create-new-idea"]
+    },
+    "task-025-list-ideas-api": {
+      "name": "创建 Ideas 列表 API",
+      "command": "cd /root/.openclaw/workspace/notes/ideas/dashboard-webapp-clean && node scripts/list-ideas-api.js",
+      "priority": 9,
+      "timeout": 300,
+      "retries": 2,
+      "dependencies": ["task-024-create-idea-api"]
+    },
+    "task-026-update-idea-api": {
+      "name": "更新 Idea API",
+      "command": "cd /root/.openclaw/workspace/notes/ideas/dashboard-webapp-clean && node scripts/update-idea-api.js",
+      "priority": 9,
+      "timeout": 300,
+      "retries": 2,
+      "dependencies": ["task-025-list-ideas-api"]
+    },
+    "task-027-delete-idea-api": {
+      "name": "删除 Idea API",
+      "command": "cd /root/.openclaw/workspace/notes/ideas/dashboard-webapp-clean && node scripts/delete-idea-api.js",
+      "priority": 9,
+      "timeout": 300,
+      "retries": 2,
+      "dependencies": ["task-025-list-ideas-api"]
+    },
+    "task-028-create-tasks-api": {
+      "name": "创建 Tasks API",
+      "command": "cd /root/.openclaw/workspace/notes/ideas/dashboard-webapp-clean && node scripts/create-tasks-api.js",
+      "priority": 9,
+      "timeout": 300,
+      "retries": 2,
+      "dependencies": ["task-025-list-ideas-api"]
+    },
+    "task-029-update-task-api": {
+      "name": "更新 Task API",
+      "command": "cd /root/.openclaw/workspace/notes/ideas/dashboard-webapp-clean && node scripts/update-task-api.js",
+      "priority": 9,
+      "timeout": 300,
+      "retries": 2,
+      "dependencies": ["task-028-create-tasks-api"]
+    },
+    "task-030-delete-task-api": {
+      "name": "删除 Task API",
+      "command": "cd /root/.openclaw/workspace/notes/ideas/dashboard-webapp-clean && node scripts/delete-task-api.js",
+      "priority": 9,
+      "timeout": 300,
+      "retries": 2,
+      "dependencies": ["task-028-create-tasks-api"]
+    },
+    "task-031-create-idea-page": {
+      "name": "创建 Idea 详情页面",
+      "command": "cd /root/.openclaw/workspace/notes/ideas/dashboard-webapp-clean && node scripts/create-idea-page.js",
+      "priority": 10,
+      "timeout": 300,
+      "retries": 2,
+      "dependencies": ["task-024-create-idea-api"]
+    },
+    "task-032-create-tasks-page": {
+      "name": "创建 Tasks 列表页面",
+      "command": "cd /root/.openclaw/workspace/notes/ideas/dashboard-webapp-clean && node scripts/create-tasks-page.js",
+      "priority": 10,
+      "timeout": 300,
+      "retries": 2,
+      "dependencies": ["task-028-create-tasks-api"]
+    },
+    "task-033-create-home-page": {
+      "name": "创建首页",
+      "command": "cd /root/.openclaw/workspace/notes/ideas/dashboard-webapp-clean && node scripts/create-home-page.js",
+      "priority": 8,
+      "timeout": 300,
+      "retries": 2,
+      "dependencies": ["task-025-list-ideas-api"]
     }
   },
   "config": {
     "max_concurrency": 3,
-    "default_timeout": 600,
+    "default_timeout": 300,
     "default_retries": 2,
     "log_file": "/root/.openclaw/workspace/notes/tools/task-dag-runner/logs/dashboard-execution.log",
     "state_file": "/root/.openclaw/workspace/notes/tools/task-dag-runner/state/dashboard-state.json"
