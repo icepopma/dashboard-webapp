@@ -1,0 +1,205 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* ============================================
+   shadcn/ui Maia 风格 + Teal 青色主题
+   配置：style=maia, baseColor=gray, theme=teal,
+         radius=small, font=dm-sans
+   ============================================ */
+
+:root {
+  /* Maia 风格 - 小圆角 */
+  --radius: 0.375rem;
+
+  /* Maia 风格 - 灰色基调背景 */
+  --background: 0 0% 100%;
+  --foreground: 240 10% 3.9%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 3.9%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 10% 3.9%;
+
+  /* Primary - Teal 青色 */
+  --primary: 173 58% 39%;
+  --primary-foreground: 0 0% 98%;
+
+  /* Secondary - Teal 青色（更浅） */
+  --secondary: 173 50% 95%;
+  --secondary-foreground: 173 58% 39%;
+
+  /* Muted - 浅灰 */
+  --muted: 240 4.8% 95.9%;
+  --muted-foreground: 240 3.8% 46.1%;
+
+  /* Accent - Teal 青色 */
+  --accent: 173 58% 39%;
+  --accent-foreground: 0 0% 98%;
+
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+
+  /* Maia 风格 - 细微边框 */
+  --border: 240 5.9% 90%;
+  --input: 240 5.9% 90%;
+
+  /* Maia 风格 - 青色焦点环 */
+  --ring: 173 58% 39%;
+
+  /* Chart colors - Teal 青色系 */
+  --chart-1: 173 58% 39%;
+  --chart-2: 173 58% 65%;
+  --chart-3: 173 58% 50%;
+  --chart-4: 173 58% 80%;
+  --chart-5: 173 58% 25%;
+
+  /* Sidebar - Maia 风格 */
+  --sidebar: 240 5.9% 95.9%;
+  --sidebar-foreground: 240 10% 3.9%;
+  --sidebar-primary: 173 58% 39%;
+  --sidebar-primary-foreground: 0 0% 98%;
+  --sidebar-accent: 173 50% 95%;
+  --sidebar-accent-foreground: 173 58% 39%;
+  --sidebar-border: 240 5.9% 90%;
+  --sidebar-ring: 173 58% 39%;
+
+  /* Maia 风格 - DM Sans 字体 */
+  --font-sans: var(--font-dm-sans);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.dark {
+  /* Maia 风格 - 深灰背景 */
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+
+  /* Primary - 亮 Teal 青色 */
+  --primary: 173 58% 50%;
+  --primary-foreground: 0 0% 98%;
+
+  /* Secondary - Teal 青色（深色） */
+  --secondary: 173 58% 15%;
+  --secondary-foreground: 173 58% 50%;
+
+  /* Muted - 深灰 */
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+
+  /* Accent - Teal 青色 */
+  --accent: 240 3.7% 15.9%;
+  --accent-foreground: 0 0% 98%;
+
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+
+  /* Maia 风格 - 深色边框 */
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+
+  /* Maia 风格 - 亮青色焦点环 */
+  --ring: 173 58% 50%;
+
+  /* Chart colors - 深色 Teal 青色系 */
+  --chart-1: 173 58% 50%;
+  --chart-2: 173 58% 65%;
+  --chart-3: 173 58% 40%;
+  --chart-4: 173 58% 70%;
+  --chart-5: 173 58% 30%;
+
+  /* Sidebar - Maia 风格深色 */
+  --sidebar: 240 3.7% 15.9%;
+  --sidebar-foreground: 0 0% 98%;
+  --sidebar-primary: 173 58% 50%;
+  --sidebar-primary-foreground: 0 0% 98%;
+  --sidebar-accent: 173 58% 15%;
+  --sidebar-accent-foreground: 173 58% 50%;
+  --sidebar-border: 240 3.7% 15.9%;
+  --sidebar-ring: 173 58% 50%;
+
+  /* Maia 风格 - 字体 */
+  --font-sans: var(--font-dm-sans);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+@layer base {
+  /* Maia 风格 - 细微边框 */
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: var(--font-dm-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+}
+
+@layer components {
+  /* Maia 风格 - 简洁按钮 */
+  button {
+    border-radius: calc(var(--radius));
+    font-weight: 500;
+    transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Primary 按钮 - Teal 青色背景 */
+  button[class*="bg-primary"] {
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+
+  /* Maia 风格 - 小圆角卡片 */
+  [data-slot="card"] {
+    border-radius: var(--radius);
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  }
+
+  /* Maia 风格 - 简洁 Badge */
+  [data-slot="badge"] {
+    border-radius: 9999px;
+    font-weight: 500;
+    padding: 0.25rem 0.625rem;
+    font-size: 0.75rem;
+  }
+
+  /* Badge 变体 - Teal 青色 */
+  [data-slot="badge"][class*="bg-primary"] {
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+
+  /* Maia 风格 - 小圆角输入框 */
+  input,
+  textarea {
+    border-radius: var(--radius);
+  }
+
+  /* Maia 风格 - 链接样式 */
+  a {
+    color: hsl(var(--primary));
+    text-decoration: none;
+    transition: color 150ms ease;
+  }
+
+  a:hover {
+    color: hsl(var(--primary) / 0.8);
+  }
+
+  /* 图标颜色 */
+  svg.text-primary {
+    color: hsl(var(--primary));
+  }
+
+  /* 大数字文本 */
+  .text-4xl.font-semibold.text-primary {
+    color: hsl(var(--primary));
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "tasks": {
+    "task-002-shadcn": {
+      "name": "配置 shadcn/ui",
+      "command": "cd /root/.openclaw/workspace/notes/ideas/dashboard-webapp && npx shadcn-ui@latest init -y",
+      "priority": 10,
+      "timeout": 600,
+      "retries": 2,
+      "dependencies": []
+    },
+    "task-003-supabase": {
+      "name": "配置 Supabase",
+      "command": "cd /root/.openclaw/workspace/notes/ideas/dashboard-webapp && node scripts/task-003-supabase.js",
+      "priority": 10,
+      "timeout": 300,
+      "retries": 2,
+      "dependencies": []
+    },
+    "task-004-db-tables": {
+      "name": "创建数据库表",
+      "command": "cd /root/.openclaw/workspace/notes/ideas/dashboard-webapp && node scripts/task-004-db-tables.js",
+      "priority": 9,
+      "timeout": 600,
+      "retries": 3,
+      "dependencies": ["task-003-supabase"]
+    },
+    "task-005-docker": {
+      "name": "创建 Docker 配置",
+      "command": "cd /root/.openclaw/workspace/notes/ideas/dashboard-webapp && node scripts/task-005-docker.js",
+      "priority": 9,
+      "timeout": 300,
+      "retries": 2,
+      "dependencies": ["task-003-supabase"]
+    },
+    "task-006-env": {
+      "name": "配置环境变量",
+      "command": "cd /root/.openclaw/workspace/notes/ideas/dashboard-webapp && node scripts/task-006-env.js",
+      "priority": 8,
+      "timeout": 300,
+      "retries": 2,
+      "dependencies": ["task-004-db-tables", "task-005-docker"]
+    },
+    "task-007-client": {
+      "name": "创建 Supabase 客户端",
+      "command": "cd /root/.openclaw/workspace/notes/ideas/dashboard-webapp && npm install @supabase/supabase-js && node scripts/task-007-client.js",
+      "priority": 8,
+      "timeout": 600,
+      "retries": 3,
+      "dependencies": ["task-006-env"]
+    },
+    "task-008-api-routes": {
+      "name": "创建 API Routes",
+      "command": "cd /root/.openclaw/workspace/notes/ideas/dashboard-webapp && node scripts/task-008-api.js",
+      "priority": 7,
+      "timeout": 900,
+      "retries": 3,
+      "dependencies": ["task-007-client"]
+    }
+  },
+  "config": {
+    "max_concurrency": 3,
+    "default_timeout": 600,
+    "default_retries": 2,
+    "log_file": "/root/.openclaw/workspace/notes/tools/task-dag-runner/logs/dashboard-execution.log",
+    "state_file": "/root/.openclaw/workspace/notes/tools/task-dag-runner/state/dashboard-state.json"
+  }
+}
