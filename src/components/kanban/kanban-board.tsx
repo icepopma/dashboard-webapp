@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react'
 import { DndContext, DragEndEvent } from '@dnd-kit/core'
 import { KanbanColumn, KanbanColumnData } from './kanban-column'
+import { TaskStats } from './task-stats'
 import { Button } from '@/components/ui/button'
 import { RefreshCw, Loader2 } from 'lucide-react'
+import { NavItemId } from '@/components/sidebar'
 
 export interface TaskCardData {
   id: string
@@ -14,37 +16,52 @@ export interface TaskCardData {
   assignee: 'Matt' | 'Pop'
   estimatedHours?: number
   tags?: string[]
+  createdAt?: string
+  project?: string
 }
 
 const defaultColumns: KanbanColumnData[] = [
   {
-    id: 'todo',
-    title: '待办',
+    id: 'recurring',
+    title: 'Recurring',
     tasks: [],
-    color: '#ef4444',
+    color: '#a855f7', // purple
+  },
+  {
+    id: 'backlog',
+    title: 'Backlog',
+    tasks: [],
+    color: '#6b7280', // gray
   },
   {
     id: 'in-progress',
-    title: '进行中',
+    title: 'In Progress',
     tasks: [],
-    color: '#eab308',
+    color: '#3b82f6', // blue
+  },
+  {
+    id: 'review',
+    title: 'Review',
+    tasks: [],
+    color: '#eab308', // yellow
   },
   {
     id: 'done',
-    title: '已完成',
+    title: 'Done',
     tasks: [],
-    color: '#22c55e',
+    color: '#22c55e', // green
   },
 ]
 
 interface KanbanBoardProps {
-  refreshTasks?: () => void
-  isLoading?: boolean
+  onTabChange?: (tab: NavItemId) => void
 }
 
-export function KanbanBoard({ refreshTasks, isLoading }: KanbanBoardProps) {
+export function KanbanBoard({ onTabChange }: KanbanBoardProps) {
   const [columns, setColumns] = useState<KanbanColumnData[]>(defaultColumns)
   const [loading, setLoading] = useState(false)
+  const [assigneeFilter, setAssigneeFilter] = useState('all')
+  const [projectFilter, setProjectFilter] = useState('all')
 
   // Fetch tasks from API
   const fetchTasks = async () => {
@@ -55,47 +72,29 @@ export function KanbanBoard({ refreshTasks, isLoading }: KanbanBoardProps) {
 
       if (data.tasks) {
         // Group tasks by status
-        const todoTasks = data.tasks
-          .filter((t: any) => t.status === 'todo')
-          .map((t: any) => ({
-            id: t.id,
-            title: t.local_path.split('/').pop() || 'Untitled',
-            description: `Idea: ${t.idea_id?.substring(0, 8)}...`,
-            priority: t.priority,
-            assignee: 'Pop', // Default to Pop
-            estimatedHours: t.estimated_hours,
-            tags: ['开发'],
-          }))
+        const statusMap: Record<string, string> = {
+          todo: 'backlog',
+          in_progress: 'in-progress',
+          completed: 'done',
+        }
 
-        const inProgressTasks = data.tasks
-          .filter((t: any) => t.status === 'in_progress')
-          .map((t: any) => ({
-            id: t.id,
-            title: t.local_path.split('/').pop() || 'Untitled',
-            description: `Idea: ${t.idea_id?.substring(0, 8)}...`,
-            priority: t.priority,
-            assignee: 'Pop',
-            estimatedHours: t.estimated_hours,
-            tags: ['开发'],
-          }))
+        const newColumns = defaultColumns.map((col) => ({
+          ...col,
+          tasks: data.tasks
+            .filter((t: any) => statusMap[t.status] === col.id)
+            .map((t: any) => ({
+              id: t.id,
+              title: t.local_path?.split('/').pop() || 'Untitled',
+              description: `Idea: ${t.idea_id?.substring(0, 8)}...`,
+              priority: t.priority || 'medium',
+              assignee: 'Pop' as const,
+              estimatedHours: t.estimated_hours,
+              tags: ['开发'],
+              project: 'Mission Control',
+            })),
+        }))
 
-        const doneTasks = data.tasks
-          .filter((t: any) => t.status === 'completed')
-          .map((t: any) => ({
-            id: t.id,
-            title: t.local_path.split('/').pop() || 'Untitled',
-            description: `Idea: ${t.idea_id?.substring(0, 8)}...`,
-            priority: t.priority,
-            assignee: 'Pop',
-            estimatedHours: t.actual_hours,
-            tags: ['完成'],
-          }))
-
-        setColumns([
-          { ...defaultColumns[0], tasks: todoTasks },
-          { ...defaultColumns[1], tasks: inProgressTasks },
-          { ...defaultColumns[2], tasks: doneTasks },
-        ])
+        setColumns(newColumns)
       }
     } catch (error) {
       console.error('Error fetching tasks:', error)
@@ -137,8 +136,10 @@ export function KanbanBoard({ refreshTasks, isLoading }: KanbanBoardProps) {
     // Update Supabase
     try {
       const statusMap: Record<string, string> = {
-        todo: 'todo',
+        recurring: 'todo',
+        backlog: 'todo',
         'in-progress': 'in_progress',
+        review: 'in_progress',
         done: 'completed',
       }
 
@@ -158,15 +159,33 @@ export function KanbanBoard({ refreshTasks, isLoading }: KanbanBoardProps) {
 
   const handleRefresh = () => {
     fetchTasks()
-    if (refreshTasks) refreshTasks()
+  }
+
+  const handleNewTask = () => {
+    // TODO: Open new task dialog
+    console.log('New task')
+  }
+
+  // Calculate stats
+  const allTasks = columns.flatMap((col) => col.tasks)
+  const stats = {
+    thisWeek: allTasks.filter((t) => {
+      // Tasks created this week
+      return true // Placeholder
+    }).length,
+    inProgress: columns.find((c) => c.id === 'in-progress')?.tasks.length || 0,
+    total: allTasks.length,
+    completion: allTasks.length > 0 
+      ? Math.round((columns.find((c) => c.id === 'done')?.tasks.length || 0) / allTasks.length * 100)
+      : 0,
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4 px-6">
+      <div className="flex items-center justify-between mb-4 px-6 flex-shrink-0">
         <div>
-          <h2 className="text-2xl font-semibold">任务看板</h2>
+          <h2 className="text-2xl font-semibold">Tasks</h2>
           <p className="text-sm text-muted-foreground">
             追踪所有任务的状态和负责人
           </p>
@@ -175,16 +194,28 @@ export function KanbanBoard({ refreshTasks, isLoading }: KanbanBoardProps) {
           variant="outline"
           size="sm"
           onClick={handleRefresh}
-          disabled={loading || isLoading}
+          disabled={loading}
           className="gap-2"
         >
-          {loading || isLoading ? (
+          {loading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           )}
           刷新
         </Button>
+      </div>
+
+      {/* Stats */}
+      <div className="px-6 mb-4 flex-shrink-0">
+        <TaskStats
+          stats={stats}
+          onNewTask={handleNewTask}
+          assigneeFilter={assigneeFilter}
+          onAssigneeChange={setAssigneeFilter}
+          projectFilter={projectFilter}
+          onProjectChange={setProjectFilter}
+        />
       </div>
 
       {/* Board */}
@@ -195,7 +226,7 @@ export function KanbanBoard({ refreshTasks, isLoading }: KanbanBoardProps) {
           </div>
         ) : (
           <DndContext onDragEnd={handleDragEnd}>
-            <div className="flex gap-6">
+            <div className="flex gap-4 h-full">
               {columns.map((column) => (
                 <KanbanColumn key={column.id} column={column} />
               ))}

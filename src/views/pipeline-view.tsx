@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, FileText, Image, Video } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Plus, FileText, Image, Video, Scissors, Lightbulb } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
 interface ContentItem {
@@ -11,14 +12,16 @@ interface ContentItem {
   title: string
   script?: string
   thumbnail?: string
-  stage: 'idea' | 'script' | 'thumbnail' | 'filming'
+  stage: 'idea' | 'script' | 'thumbnail' | 'filming' | 'editing'
+  tags?: string[]
 }
 
 const stages = [
-  { id: 'idea', label: '创意', color: '#ef4444', icon: FileText },
-  { id: 'script', label: '脚本', color: '#f59e0b', icon: FileText },
-  { id: 'thumbnail', label: '缩略图', color: '#eab308', icon: Image },
-  { id: 'filming', label: '拍摄', color: '#22c55e', icon: Video },
+  { id: 'idea', label: 'Ideas', color: '#eab308', icon: Lightbulb, bgColor: 'bg-yellow-500/10' },
+  { id: 'script', label: 'Scripting', color: '#3b82f6', icon: FileText, bgColor: 'bg-blue-500/10' },
+  { id: 'thumbnail', label: 'Thumbnail', color: '#a855f7', icon: Image, bgColor: 'bg-purple-500/10' },
+  { id: 'filming', label: 'Filming', color: '#ef4444', icon: Video, bgColor: 'bg-red-500/10' },
+  { id: 'editing', label: 'Editing', color: '#f97316', icon: Scissors, bgColor: 'bg-orange-500/10' },
 ] as const
 
 export function PipelineView() {
@@ -28,11 +31,13 @@ export function PipelineView() {
       title: 'AI 工具教程系列',
       stage: 'script',
       script: '今天我们学习如何使用...',
+      tags: ['YouTube'],
     },
     {
       id: 'content-2',
       title: 'Next.js 最佳实践',
       stage: 'idea',
+      tags: ['YouTube', 'Story'],
     },
     {
       id: 'content-3',
@@ -40,47 +45,67 @@ export function PipelineView() {
       stage: 'filming',
       script: 'Docker 是一个容器化技术...',
       thumbnail: '/placeholder.jpg',
+      tags: ['YouTube'],
     },
   ])
 
   const getItemsByStage = (stage: string) =>
     items.filter((item) => item.stage === stage)
 
-  const moveStage = (itemId: string, direction: 'forward' | 'backward') => {
-    setItems((items) => {
-      return items.map((item) => {
-        if (item.id !== itemId) return item
-
-        const stageIndex = stages.findIndex((s) => s.id === item.stage)
-        const newStageIndex = direction === 'forward'
-          ? Math.min(stageIndex + 1, stages.length - 1)
-          : Math.max(stageIndex - 1, 0)
-
-        return { ...item, stage: stages[newStageIndex].id as any }
-      })
-    })
-  }
+  // Calculate stage counts
+  const stageCounts = stages.reduce((acc, stage) => {
+    acc[stage.id] = getItemsByStage(stage.id).length
+    return acc
+  }, {} as Record<string, number>)
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4 px-6">
+      <div className="flex items-center justify-between mb-4 px-6 flex-shrink-0">
         <div>
-          <h2 className="text-2xl font-semibold">内容流水线</h2>
+          <h2 className="text-2xl font-semibold">Content Pipeline</h2>
           <p className="text-sm text-muted-foreground">
-            管理内容创作流程：创意 → 脚本 → 缩略图 → 拍摄
+            Ideas → Scripts → Thumbnails → Filming → Editing
           </p>
         </div>
         <Button className="gap-2">
           <Plus className="h-4 w-4" />
-          新内容
+          New Content
         </Button>
       </div>
 
-      {/* Pipeline */}
-      <div className="flex-1 px-6 pb-6 overflow-x-auto">
+      {/* Stage Stats */}
+      <div className="px-6 mb-4 flex-shrink-0">
+        <div className="flex gap-4">
+          {stages.map((stage) => {
+            const Icon = stage.icon
+            return (
+              <Card key={stage.id} className="flex-1 border-border/60 shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg ${stage.bgColor}`}>
+                      <Icon className="h-4 w-4" style={{ color: stage.color }} />
+                    </div>
+                    <div>
+                      <div className="text-2xl font-semibold" style={{ color: stage.color }}>
+                        {stageCounts[stage.id]}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {stage.label}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Pipeline Board */}
+      <div className="flex-1 px-6 pb-6 overflow-hidden">
         <ScrollArea className="h-full">
-          <div className="flex gap-4 min-w-max">
+          <div className="flex gap-4 pb-4">
             {stages.map((stage) => {
               const Icon = stage.icon
               const stageItems = getItemsByStage(stage.id)
@@ -88,53 +113,78 @@ export function PipelineView() {
               return (
                 <Card
                   key={stage.id}
-                  className="flex-shrink-0 w-80 border-border/60"
+                  className="flex-shrink-0 w-72 border-border/60 flex flex-col"
                 >
-                  <CardHeader>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: stage.color }}
-                      />
-                      <CardTitle className="text-sm">{stage.label}</CardTitle>
-                      <span className="ml-auto text-xs text-muted-foreground">
-                        {stageItems.length}
-                      </span>
+                  {/* Column Header */}
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: stage.color }}
+                        />
+                        <CardTitle className="text-sm font-medium">
+                          {stage.label}
+                        </CardTitle>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">
+                          {stageItems.length}
+                        </span>
+                        <button className="p-1 hover:bg-accent rounded transition-colors">
+                          <Plus className="h-4 w-4 text-muted-foreground" />
+                        </button>
+                      </div>
                     </div>
                   </CardHeader>
-                  <CardContent className="p-3">
+
+                  {/* Column Content */}
+                  <CardContent className="flex-1 p-3 pt-0">
                     <div className="space-y-2">
                       {stageItems.map((item) => (
                         <Card
                           key={item.id}
-                          className="p-3 border-border/60 hover:border-primary/50 transition-colors"
+                          className="p-3 border-border/60 hover:border-primary/50 transition-colors cursor-pointer"
                         >
                           <h4 className="font-medium text-sm mb-2">
                             {item.title}
                           </h4>
                           {item.script && (
-                            <p className="text-xs text-muted-foreground line-clamp-2">
+                            <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
                               {item.script}
                             </p>
                           )}
                           {item.thumbnail && (
-                            <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
                               <Image className="h-3 w-3" />
-                              <span>有缩略图</span>
+                              <span>Has thumbnail</span>
+                            </div>
+                          )}
+                          {item.tags && item.tags.length > 0 && (
+                            <div className="flex gap-1">
+                              {item.tags.map((tag) => (
+                                <Badge
+                                  key={tag}
+                                  variant={tag === 'YouTube' ? 'default' : 'secondary'}
+                                  className="text-xs"
+                                >
+                                  {tag}
+                                </Badge>
+                              ))}
                             </div>
                           )}
                         </Card>
                       ))}
                       {stageItems.length === 0 && (
-                        <div className="text-center py-8 text-muted-foreground text-xs">
-                          暂无内容
+                        <div className="text-center py-8 text-muted-foreground text-xs border border-dashed border-border rounded-lg">
+                          No items
                         </div>
                       )}
                     </div>
                   </CardContent>
                 </Card>
-              )}
-            )}
+              )
+            })}
           </div>
         </ScrollArea>
       </div>
