@@ -4,7 +4,8 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { GripVertical, Clock, User } from 'lucide-react'
+import { GripVertical, Clock, User, Calendar, FolderKanban } from 'lucide-react'
+import { useI18n } from '@/lib/i18n'
 
 export interface TaskCardData {
   id: string
@@ -14,6 +15,8 @@ export interface TaskCardData {
   assignee: 'Matt' | 'Pop'
   estimatedHours?: number
   tags?: string[]
+  createdAt?: string
+  project?: string
 }
 
 interface TaskCardProps {
@@ -21,6 +24,7 @@ interface TaskCardProps {
 }
 
 export function TaskCard({ task }: TaskCardProps) {
+  const { locale } = useI18n()
   const {
     attributes,
     listeners,
@@ -41,6 +45,34 @@ export function TaskCard({ task }: TaskCardProps) {
     low: 'bg-green-500/10 text-green-500 border-green-500/20',
   }
 
+  const priorityLabels = {
+    high: locale === 'zh' ? '高' : 'High',
+    medium: locale === 'zh' ? '中' : 'Medium',
+    low: locale === 'zh' ? '低' : 'Low',
+  }
+
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString)
+      const now = new Date()
+      const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
+      
+      if (locale === 'zh') {
+        if (diffDays === 0) return '今天'
+        if (diffDays === 1) return '昨天'
+        if (diffDays < 7) return `${diffDays} 天前`
+        return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
+      } else {
+        if (diffDays === 0) return 'Today'
+        if (diffDays === 1) return 'Yesterday'
+        if (diffDays < 7) return `${diffDays} days ago`
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      }
+    } catch {
+      return dateString
+    }
+  }
+
   return (
     <div
       ref={setNodeRef}
@@ -54,7 +86,7 @@ export function TaskCard({ task }: TaskCardProps) {
         }`}
       >
         {/* Header */}
-        <div className="flex items-start justify-between gap-2 mb-3">
+        <div className="flex items-start justify-between gap-2 mb-2">
           <h4 className="font-medium text-sm flex-1">{task.title}</h4>
           <GripVertical className="h-4 w-4 text-muted-foreground flex-shrink-0" />
         </div>
@@ -66,14 +98,22 @@ export function TaskCard({ task }: TaskCardProps) {
           </p>
         )}
 
-        {/* Meta */}
-        <div className="flex items-center gap-3 text-xs">
+        {/* Project */}
+        {task.project && (
+          <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
+            <FolderKanban className="h-3 w-3" />
+            <span>{task.project}</span>
+          </div>
+        )}
+
+        {/* Meta Row 1 */}
+        <div className="flex items-center gap-2 text-xs flex-wrap">
           {/* Priority */}
           <Badge
             variant="outline"
-            className={`flex-shrink-0 ${priorityColors[task.priority]}`}
+            className={`flex-shrink-0 text-[10px] ${priorityColors[task.priority]}`}
           >
-            {task.priority}
+            {priorityLabels[task.priority]}
           </Badge>
 
           {/* Assignee */}
@@ -89,6 +129,14 @@ export function TaskCard({ task }: TaskCardProps) {
               <span>{task.estimatedHours}h</span>
             </div>
           )}
+
+          {/* Created At */}
+          {task.createdAt && (
+            <div className="flex items-center gap-1 text-muted-foreground flex-shrink-0">
+              <Calendar className="h-3 w-3" />
+              <span>{formatDate(task.createdAt)}</span>
+            </div>
+          )}
         </div>
 
         {/* Tags */}
@@ -98,7 +146,7 @@ export function TaskCard({ task }: TaskCardProps) {
               <Badge
                 key={tag}
                 variant="secondary"
-                className="text-xs font-normal"
+                className="text-[10px] font-normal"
               >
                 {tag}
               </Badge>

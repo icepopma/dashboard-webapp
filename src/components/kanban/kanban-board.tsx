@@ -21,6 +21,18 @@ export interface TaskCardData {
   project?: string
 }
 
+export interface TaskCardData {
+  id: string
+  title: string
+  description?: string
+  priority: 'high' | 'medium' | 'low'
+  assignee: 'Matt' | 'Pop'
+  estimatedHours?: number
+  tags?: string[]
+  createdAt?: string
+  project?: string
+}
+
 interface KanbanBoardProps {
   onTabChange?: (tab: NavItemId) => void
 }
@@ -92,6 +104,7 @@ export function KanbanBoard({ onTabChange }: KanbanBoardProps) {
               estimatedHours: t.estimated_hours,
               tags: ['开发'],
               project: 'Mission Control',
+              createdAt: t.created_at || new Date().toISOString(),
             })),
         }))
 
