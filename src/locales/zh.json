@@ -1,0 +1,181 @@
+{
+  "common": {
+    "sync": "同步",
+    "newIdea": "新想法",
+    "search": "搜索",
+    "filter": "筛选",
+    "all": "全部",
+    "loading": "加载中...",
+    "noData": "暂无数据",
+    "refresh": "刷新",
+    "cancel": "取消",
+    "confirm": "确认",
+    "save": "保存",
+    "delete": "删除",
+    "edit": "编辑"
+  },
+  "nav": {
+    "home": "首页",
+    "tasks": "任务",
+    "content": "内容",
+    "approvals": "审批",
+    "council": "委员会",
+    "calendar": "日历",
+    "projects": "项目",
+    "memory": "记忆",
+    "docs": "文档",
+    "people": "人员",
+    "office": "办公室",
+    "team": "团队"
+  },
+  "home": {
+    "title": "欢迎来到任务控制中心",
+    "subtitle": "管理你的想法并追踪进度",
+    "totalIdeas": "总想法",
+    "withPlan": "有计划",
+    "totalTasks": "总任务",
+    "completed": "已完成",
+    "getStarted": "开始使用",
+    "selectItem": "从侧边栏选择或从这里开始",
+    "createIdeas": "创建想法",
+    "createIdeasDesc": "用 markdown 文件记录你的想法",
+    "planWork": "规划工作",
+    "planWorkDesc": "将想法分解为可执行的任务",
+    "trackProgress": "追踪进度",
+    "trackProgressDesc": "监控完成情况并保持组织",
+    "manageTeam": "管理团队",
+    "manageTeamDesc": "组织 agents 及其职责",
+    "recentActivity": "最近活动"
+  },
+  "tasks": {
+    "title": "任务",
+    "subtitle": "追踪所有任务的状态和负责人",
+    "thisWeek": "本周",
+    "inProgress": "进行中",
+    "total": "总计",
+    "completion": "完成率",
+    "newTask": "新任务",
+    "recurring": "循环任务",
+    "backlog": "待办",
+    "review": "审核中",
+    "done": "已完成"
+  },
+  "content": {
+    "title": "内容流水线",
+    "subtitle": "想法 → 脚本 → 缩略图 → 拍摄 → 剪辑",
+    "newContent": "新内容",
+    "ideas": "想法",
+    "scripting": "写脚本",
+    "thumbnail": "缩略图",
+    "filming": "拍摄中",
+    "editing": "剪辑中",
+    "hasThumbnail": "有缩略图",
+    "noItems": "暂无内容"
+  },
+  "calendar": {
+    "title": "日历",
+    "subtitle": "查看所有预定任务和定时作业",
+    "week": "周",
+    "month": "月",
+    "today": "今天",
+    "scheduledTasks": "计划任务",
+    "automatedRoutines": "自动执行的任务",
+    "alwaysRunning": "持续运行",
+    "nextUp": "即将执行",
+    "taskTypes": {
+      "cron": "定时任务",
+      "scheduled": "计划任务",
+      "oneTime": "一次性任务"
+    },
+    "more": "更多",
+    "noUpcoming": "没有即将执行的任务"
+  },
+  "memory": {
+    "title": "记忆",
+    "subtitle": "搜索和查看所有记忆和对话",
+    "newMemory": "新记忆",
+    "searchMemory": "搜索记忆...",
+    "longTerm": "长期记忆",
+    "dailyJournal": "每日日志",
+    "selectMemory": "选择一个记忆",
+    "selectFromSidebar": "从侧边栏选择查看",
+    "words": "字",
+    "modified": "最近修改"
+  },
+  "team": {
+    "title": "认识团队",
+    "subtitle": "个 AI agents，每个都有真实的角色和个性。",
+    "addMember": "添加成员",
+    "totalMembers": "总成员",
+    "online": "在线",
+    "working": "工作中",
+    "totalTasksLabel": "总任务",
+    "layers": {
+      "input": "输入信号",
+      "output": "输出动作",
+      "meta": "元层级"
+    },
+    "agents": "个 agents",
+    "status": {
+      "active": "在线",
+      "idle": "空闲",
+      "workingLabel": "工作中"
+    }
+  },
+  "office": {
+    "title": "办公室",
+    "subtitle": "AI 团队总部 — 实时视图",
+    "workingLabel": "工作中",
+    "chatting": "聊天中",
+    "gathering": "集合中",
+    "idleLabel": "空闲",
+    "allWorking": "全员工作",
+    "gather": "召集",
+    "runMeeting": "开始会议",
+    "watercooler": "茶水间",
+    "liveActivity": "实时活动",
+    "lastHour": "最近一小时",
+    "noActivity": "没有最近活动",
+    "checkBackSoon": "稍后再来查看",
+    "workingOn": "正在处理：",
+    "idleStatus": "空闲"
+  },
+  "approvals": {
+    "title": "审批",
+    "subtitle": "审核并批准待处理的操作",
+    "pending": "个待处理",
+    "requestedBy": "请求者",
+    "reject": "拒绝",
+    "approve": "批准",
+    "noPending": "没有待处理的审批",
+    "allCaughtUp": "全部处理完毕！"
+  },
+  "council": {
+    "title": "委员会",
+    "subtitle": "多 agent 审议和决策",
+    "active": "活跃",
+    "activeLabel": "个活跃"
+  },
+  "projects": {
+    "title": "项目",
+    "subtitle": "管理所有项目及其进度",
+    "newProject": "新项目",
+    "progress": "进度",
+    "tasksLabel": "任务",
+    "members": "成员"
+  },
+  "docs": {
+    "title": "文档",
+    "subtitle": "浏览项目文档和配置文件",
+    "searchDocs": "搜索文档..."
+  },
+  "people": {
+    "title": "人员",
+    "subtitle": "管理用户和协作者",
+    "invite": "邀请",
+    "owner": "所有者",
+    "aiAssistant": "AI 助手",
+    "always": "始终",
+    "justNow": "刚刚"
+  }
+}

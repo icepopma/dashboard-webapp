@@ -1,0 +1,181 @@
+{
+  "common": {
+    "sync": "Sync",
+    "newIdea": "New Idea",
+    "search": "Search",
+    "filter": "Filter",
+    "all": "All",
+    "loading": "Loading...",
+    "noData": "No data",
+    "refresh": "Refresh",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit"
+  },
+  "nav": {
+    "home": "Home",
+    "tasks": "Tasks",
+    "content": "Content",
+    "approvals": "Approvals",
+    "council": "Council",
+    "calendar": "Calendar",
+    "projects": "Projects",
+    "memory": "Memory",
+    "docs": "Docs",
+    "people": "People",
+    "office": "Office",
+    "team": "Team"
+  },
+  "home": {
+    "title": "Welcome to Mission Control",
+    "subtitle": "Manage your ideas and track your progress",
+    "totalIdeas": "Total Ideas",
+    "withPlan": "With Plan",
+    "totalTasks": "Total Tasks",
+    "completed": "Completed",
+    "getStarted": "Get Started",
+    "selectItem": "Select an item from the sidebar or start here",
+    "createIdeas": "Create Ideas",
+    "createIdeasDesc": "Document your ideas with markdown files",
+    "planWork": "Plan Work",
+    "planWorkDesc": "Break down ideas into actionable tasks",
+    "trackProgress": "Track Progress",
+    "trackProgressDesc": "Monitor completion and stay organized",
+    "manageTeam": "Manage Team",
+    "manageTeamDesc": "Organize agents and their responsibilities",
+    "recentActivity": "Recent Activity"
+  },
+  "tasks": {
+    "title": "Tasks",
+    "subtitle": "Track all task statuses and assignees",
+    "thisWeek": "This week",
+    "inProgress": "In Progress",
+    "total": "Total",
+    "completion": "Completion",
+    "newTask": "New Task",
+    "recurring": "Recurring",
+    "backlog": "Backlog",
+    "review": "Review",
+    "done": "Done"
+  },
+  "content": {
+    "title": "Content Pipeline",
+    "subtitle": "Ideas → Scripts → Thumbnails → Filming → Editing",
+    "newContent": "New Content",
+    "ideas": "Ideas",
+    "scripting": "Scripting",
+    "thumbnail": "Thumbnail",
+    "filming": "Filming",
+    "editing": "Editing",
+    "hasThumbnail": "Has thumbnail",
+    "noItems": "No items"
+  },
+  "calendar": {
+    "title": "Calendar",
+    "subtitle": "View all scheduled tasks and cron jobs",
+    "week": "Week",
+    "month": "Month",
+    "today": "Today",
+    "scheduledTasks": "Scheduled Tasks",
+    "automatedRoutines": "automated routines",
+    "alwaysRunning": "Always Running",
+    "nextUp": "Next Up",
+    "taskTypes": {
+      "cron": "Cron Job",
+      "scheduled": "Scheduled",
+      "oneTime": "One-time"
+    },
+    "more": "more",
+    "noUpcoming": "No upcoming tasks"
+  },
+  "memory": {
+    "title": "Memory",
+    "subtitle": "Search and view all memories and conversations",
+    "newMemory": "New Memory",
+    "searchMemory": "Search memory...",
+    "longTerm": "Long-Term Memory",
+    "dailyJournal": "DAILY JOURNAL",
+    "selectMemory": "Select a memory",
+    "selectFromSidebar": "Choose from the sidebar to view",
+    "words": "words",
+    "modified": "Modified recently"
+  },
+  "team": {
+    "title": "Meet the Team",
+    "subtitle": " AI agents, each with a real role and a real personality.",
+    "addMember": "Add Member",
+    "totalMembers": "Total Members",
+    "online": "Online",
+    "working": "Working",
+    "totalTasksLabel": "Total Tasks",
+    "layers": {
+      "input": "Input Signal",
+      "output": "Output Action",
+      "meta": "Meta Layer"
+    },
+    "agents": " agents",
+    "status": {
+      "active": "Online",
+      "idle": "Idle",
+      "workingLabel": "Working"
+    }
+  },
+  "office": {
+    "title": "Office",
+    "subtitle": "AI team headquarters — live view",
+    "workingLabel": "Working",
+    "chatting": "Chatting",
+    "gathering": "Gathering",
+    "idleLabel": "Idle",
+    "allWorking": "All Working",
+    "gather": "Gather",
+    "runMeeting": "Run Meeting",
+    "watercooler": "Watercooler",
+    "liveActivity": "Live Activity",
+    "lastHour": "Last hour",
+    "noActivity": "No recent activity",
+    "checkBackSoon": "Check back soon",
+    "workingOn": "Working on: ",
+    "idleStatus": "Idle"
+  },
+  "approvals": {
+    "title": "Approvals",
+    "subtitle": "Review and approve pending actions",
+    "pending": " pending",
+    "requestedBy": "Requested by",
+    "reject": "Reject",
+    "approve": "Approve",
+    "noPending": "No pending approvals",
+    "allCaughtUp": "All caught up!"
+  },
+  "council": {
+    "title": "Council",
+    "subtitle": "Multi-agent deliberation and decision making",
+    "active": "Active",
+    "activeLabel": " active"
+  },
+  "projects": {
+    "title": "Projects",
+    "subtitle": "Manage all projects and their progress",
+    "newProject": "New Project",
+    "progress": "Progress",
+    "tasksLabel": "tasks",
+    "members": "members"
+  },
+  "docs": {
+    "title": "Docs",
+    "subtitle": "Browse project documents and config files",
+    "searchDocs": "Search docs..."
+  },
+  "people": {
+    "title": "People",
+    "subtitle": "Manage users and collaborators",
+    "invite": "Invite",
+    "owner": "Owner",
+    "aiAssistant": "AI Assistant",
+    "always": "Always",
+    "justNow": "Just now"
+  }
+}

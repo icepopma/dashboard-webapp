@@ -8,9 +8,9 @@ import matter from 'gray-matter'
 const IDEAS_DIR = '/root/notes/ideas'
 
 // Parse markdown frontmatter
-function parseMarkdown(filePath: string) {
+async function parseMarkdown(filePath: string) {
   try {
-    const content = readFile(filePath, 'utf-8')
+    const content = await readFile(filePath, 'utf-8')
     const { data, content: markdown } = matter(content)
     return {
       frontmatter: data,
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
         // Parse idea.md
         let ideaData = null
         try {
-          const parsed = parseMarkdown(ideaMdPath)
+          const parsed = await parseMarkdown(ideaMdPath)
           if (parsed) {
             ideaData = parsed.frontmatter
           }
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
         // Parse work-plan.md
         let hasWorkPlan = false
         try {
-          const parsed = parseMarkdown(workPlanMdPath)
+          const parsed = await parseMarkdown(workPlanMdPath)
           if (parsed) {
             hasWorkPlan = true
           }
@@ -83,6 +83,13 @@ export async function POST(request: Request) {
       }
 
       // Upsert to Supabase
+      if (!supabase) {
+        return NextResponse.json({
+          message: 'Supabase not configured, skipping sync',
+          synced: 0,
+        })
+      }
+      
       for (const idea of ideas) {
         const { data: existing } = await supabase
           .from('ideas')
