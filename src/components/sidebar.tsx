@@ -1,38 +1,38 @@
 'use client'
 
 import * as React from 'react'
-import { usePathname, useRouter } from 'next/navigation'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
+import { useI18n } from '@/lib/i18n'
+import { LanguageSwitcher } from '@/components/language-switcher'
 import {
   Home,
   KanbanSquare,
   GitBranch,
   Calendar,
-  FileText,
+  Brain,
   Users,
   MonitorPlay,
   CheckSquare,
   Users2,
   FolderKanban,
-  Brain,
   FileCode,
   User,
 } from 'lucide-react'
 
 const navItems = [
-  { id: 'home', label: 'Home', icon: Home },
-  { id: 'kanban', label: 'Tasks', icon: KanbanSquare },
-  { id: 'pipeline', label: 'Content', icon: GitBranch },
-  { id: 'approvals', label: 'Approvals', icon: CheckSquare },
-  { id: 'council', label: 'Council', icon: Users2 },
-  { id: 'calendar', label: 'Calendar', icon: Calendar },
-  { id: 'projects', label: 'Projects', icon: FolderKanban },
-  { id: 'memory', label: 'Memory', icon: Brain },
-  { id: 'docs', label: 'Docs', icon: FileCode },
-  { id: 'people', label: 'People', icon: User },
-  { id: 'office', label: 'Office', icon: MonitorPlay },
-  { id: 'team', label: 'Team', icon: Users },
+  { id: 'home', icon: Home },
+  { id: 'tasks', icon: KanbanSquare },
+  { id: 'content', icon: GitBranch },
+  { id: 'approvals', icon: CheckSquare },
+  { id: 'council', icon: Users2 },
+  { id: 'calendar', icon: Calendar },
+  { id: 'projects', icon: FolderKanban },
+  { id: 'memory', icon: Brain },
+  { id: 'docs', icon: FileCode },
+  { id: 'people', icon: User },
+  { id: 'office', icon: MonitorPlay },
+  { id: 'team', icon: Users },
 ] as const
 
 export type NavItemId = typeof navItems[number]['id']
@@ -43,18 +43,23 @@ interface SidebarProps {
 }
 
 export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
+  const { t } = useI18n()
+
   return (
     <aside className="w-64 border-r border-border bg-sidebar flex-shrink-0 flex flex-col">
       {/* Logo Area */}
       <div className="p-5 border-b border-border">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center text-xl">
-            🫧
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center text-xl">
+              🫧
+            </div>
+            <div>
+              <h1 className="text-lg font-semibold text-sidebar-foreground">Pop</h1>
+              <p className="text-xs text-muted-foreground">Mission Control</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-lg font-semibold text-sidebar-foreground">Pop</h1>
-            <p className="text-xs text-muted-foreground">Mission Control</p>
-          </div>
+          <LanguageSwitcher />
         </div>
       </div>
 
@@ -77,7 +82,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
                     )}
                   >
                     <Icon className="h-4 w-4" />
-                    {item.label}
+                    {t(`nav.${item.id}`)}
                   </button>
                 </li>
               )

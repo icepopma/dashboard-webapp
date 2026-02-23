@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Plus, Calendar, Clock, CheckCircle2, BarChart3 } from 'lucide-react'
+import { useI18n } from '@/lib/i18n'
 
 interface TaskStatsProps {
   stats: {
@@ -28,30 +29,32 @@ export function TaskStats({
   projectFilter,
   onProjectChange,
 }: TaskStatsProps) {
+  const { t } = useI18n()
+
   const statItems = [
     {
-      label: 'This week',
+      label: t('tasks.thisWeek'),
       value: stats.thisWeek,
       color: 'text-green-500',
       bgColor: 'bg-green-500/10',
       icon: Calendar,
     },
     {
-      label: 'In Progress',
+      label: t('tasks.inProgress'),
       value: stats.inProgress,
       color: 'text-blue-500',
       bgColor: 'bg-blue-500/10',
       icon: Clock,
     },
     {
-      label: 'Total',
+      label: t('tasks.total'),
       value: stats.total,
       color: 'text-foreground',
       bgColor: 'bg-muted',
       icon: BarChart3,
     },
     {
-      label: 'Completion',
+      label: t('tasks.completion'),
       value: `${stats.completion}%`,
       color: 'text-purple-500',
       bgColor: 'bg-purple-500/10',
@@ -89,7 +92,7 @@ export function TaskStats({
         {/* New Task Button */}
         <Button onClick={onNewTask} className="gap-2 h-auto py-3 px-4">
           <Plus className="h-4 w-4" />
-          New Task
+          {t('tasks.newTask')}
         </Button>
       </div>
 
@@ -97,14 +100,14 @@ export function TaskStats({
       <div className="flex items-center gap-3">
         {/* Assignee Filter */}
         <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Filter:</span>
+          <span className="text-sm text-muted-foreground">{t('common.filter')}:</span>
           <div className="flex gap-1">
             <Badge
               variant={assigneeFilter === 'all' ? 'default' : 'outline'}
               className="cursor-pointer"
               onClick={() => onAssigneeChange('all')}
             >
-              All
+              {t('common.all')}
             </Badge>
             <Badge
               variant={assigneeFilter === 'Matt' ? 'default' : 'outline'}

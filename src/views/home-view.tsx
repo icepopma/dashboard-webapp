@@ -1,5 +1,6 @@
 'use client'
 
+import { useI18n } from '@/lib/i18n'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -21,24 +22,26 @@ const recentActivity = [
 ]
 
 export function HomeView() {
+  const { t } = useI18n()
+
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between mb-6 px-6 pt-6 flex-shrink-0">
         <div>
-          <h2 className="text-2xl font-semibold">Welcome to Mission Control</h2>
+          <h2 className="text-2xl font-semibold">{t('home.title')}</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage your ideas and track your progress
+            {t('home.subtitle')}
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" className="gap-2">
             <Sparkles className="h-4 w-4" />
-            Sync
+            {t('common.sync')}
           </Button>
           <Button size="sm" className="gap-2">
             <Plus className="h-4 w-4" />
-            New Idea
+            {t('common.newIdea')}
           </Button>
         </div>
       </div>
@@ -54,7 +57,7 @@ export function HomeView() {
                 </div>
                 <div>
                   <div className="text-2xl font-semibold">{stats.totalIdeas}</div>
-                  <div className="text-xs text-muted-foreground">Total Ideas</div>
+                  <div className="text-xs text-muted-foreground">{t('home.totalIdeas')}</div>
                 </div>
               </div>
             </CardContent>
@@ -68,7 +71,7 @@ export function HomeView() {
                 </div>
                 <div>
                   <div className="text-2xl font-semibold">{stats.withPlan}</div>
-                  <div className="text-xs text-muted-foreground">With Plan</div>
+                  <div className="text-xs text-muted-foreground">{t('home.withPlan')}</div>
                 </div>
               </div>
             </CardContent>
@@ -82,7 +85,7 @@ export function HomeView() {
                 </div>
                 <div>
                   <div className="text-2xl font-semibold">{stats.totalTasks}</div>
-                  <div className="text-xs text-muted-foreground">Total Tasks</div>
+                  <div className="text-xs text-muted-foreground">{t('home.totalTasks')}</div>
                 </div>
               </div>
             </CardContent>
@@ -96,7 +99,7 @@ export function HomeView() {
                 </div>
                 <div>
                   <div className="text-2xl font-semibold">{stats.completionRate}%</div>
-                  <div className="text-xs text-muted-foreground">Completed</div>
+                  <div className="text-xs text-muted-foreground">{t('home.completed')}</div>
                 </div>
               </div>
             </CardContent>
@@ -109,42 +112,42 @@ export function HomeView() {
         {/* Quick Start */}
         <Card className="flex-1 border-border/60 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-lg">Get Started</CardTitle>
+            <CardTitle className="text-lg">{t('home.getStarted')}</CardTitle>
             <CardDescription>
-              Select an item from the sidebar or start here
+              {t('home.selectItem')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 rounded-lg bg-muted/50 border border-border/60 hover:border-primary/50 transition-colors cursor-pointer">
                 <FileText className="h-5 w-5 text-primary mb-2" />
-                <h3 className="font-medium text-sm mb-1">Create Ideas</h3>
+                <h3 className="font-medium text-sm mb-1">{t('home.createIdeas')}</h3>
                 <p className="text-xs text-muted-foreground">
-                  Document your ideas with markdown files
+                  {t('home.createIdeasDesc')}
                 </p>
               </div>
 
               <div className="p-4 rounded-lg bg-muted/50 border border-border/60 hover:border-primary/50 transition-colors cursor-pointer">
                 <CheckCircle2 className="h-5 w-5 text-primary mb-2" />
-                <h3 className="font-medium text-sm mb-1">Plan Work</h3>
+                <h3 className="font-medium text-sm mb-1">{t('home.planWork')}</h3>
                 <p className="text-xs text-muted-foreground">
-                  Break down ideas into actionable tasks
+                  {t('home.planWorkDesc')}
                 </p>
               </div>
 
               <div className="p-4 rounded-lg bg-muted/50 border border-border/60 hover:border-primary/50 transition-colors cursor-pointer">
                 <Sparkles className="h-5 w-5 text-primary mb-2" />
-                <h3 className="font-medium text-sm mb-1">Track Progress</h3>
+                <h3 className="font-medium text-sm mb-1">{t('home.trackProgress')}</h3>
                 <p className="text-xs text-muted-foreground">
-                  Monitor completion and stay organized
+                  {t('home.trackProgressDesc')}
                 </p>
               </div>
 
               <div className="p-4 rounded-lg bg-muted/50 border border-border/60 hover:border-primary/50 transition-colors cursor-pointer">
                 <Users className="h-5 w-5 text-primary mb-2" />
-                <h3 className="font-medium text-sm mb-1">Manage Team</h3>
+                <h3 className="font-medium text-sm mb-1">{t('home.manageTeam')}</h3>
                 <p className="text-xs text-muted-foreground">
-                  Organize agents and their responsibilities
+                  {t('home.manageTeamDesc')}
                 </p>
               </div>
             </div>
@@ -154,7 +157,7 @@ export function HomeView() {
         {/* Recent Activity */}
         <Card className="w-80 border-border/60 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-lg">Recent Activity</CardTitle>
+            <CardTitle className="text-lg">{t('home.recentActivity')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">

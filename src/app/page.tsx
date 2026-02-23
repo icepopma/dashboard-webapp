@@ -16,15 +16,15 @@ import { DocsView } from '@/views/docs-view'
 import { PeopleView } from '@/views/people-view'
 
 export default function HomePage() {
-  const [activeTab, setActiveTab] = useState<NavItemId>('kanban')
+  const [activeTab, setActiveTab] = useState<NavItemId>('tasks')
 
   const renderContent = () => {
     switch (activeTab) {
       case 'home':
         return <HomeView />
-      case 'kanban':
+      case 'tasks':
         return <KanbanBoard onTabChange={setActiveTab} />
-      case 'pipeline':
+      case 'content':
         return <PipelineView />
       case 'calendar':
         return <CalendarView />
