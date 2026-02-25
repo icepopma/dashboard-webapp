@@ -30,6 +30,8 @@ export class AgentLauncher extends EventEmitter {
   private healthCheckTimer?: NodeJS.Timeout
   private lastOutputTime: Map<string, number> = new Map()
   private restartCount: Map<string, number> = new Map()
+  // 保存原始启动选项，用于重启
+  private launchOptions: Map<string, LaunchOptions> = new Map()
 
   constructor() {
     super()
@@ -86,6 +88,9 @@ export class AgentLauncher extends EventEmitter {
     }
 
     this.sessions.set(sessionId, session)
+    
+    // 保存原始启动选项，用于重启
+    this.launchOptions.set(sessionId, options)
     
     return session
   }
@@ -369,10 +374,33 @@ Include screenshots if UI changes are made.`
 
     this.emit('restarting', { sessionId, attempt: restarts })
 
-    // TODO: 重新启动需要保存原始 prompt 和 options
-    // 这里暂时只标记状态
-    session.status = 'starting'
-    this.sessions.set(sessionId, session)
+    // 获取保存的原始启动选项
+    const originalOptions = this.launchOptions.get(sessionId)
+    if (originalOptions) {
+      // 重新启动，使用原始选项
+      console.log(`[AgentLauncher] 使用原始选项重启: agent=${originalOptions.agent}, taskId=${originalOptions.taskId}`)
+      
+      // 创建新会话
+      const newSession = await this.launch({
+        ...originalOptions,
+        // 重用 worktree（如果存在）
+        worktree: !!session.worktree,
+      })
+      
+      // 更新会话映射
+      this.sessions.delete(sessionId)
+      this.launchOptions.delete(sessionId)
+      this.sessions.set(newSession.id, newSession)
+      this.launchOptions.set(newSession.id, originalOptions)
+      
+      // 更新重启计数
+      this.restartCount.set(newSession.id, restarts)
+    } else {
+      // 没有原始选项，只标记状态
+      console.warn(`[AgentLauncher] 未找到原始启动选项，无法重启`)
+      session.status = 'failed'
+      this.sessions.set(sessionId, session)
+    }
   }
 
   /**
@@ -404,6 +432,7 @@ Include screenshots if UI changes are made.`
           this.processes.delete(sessionId)
           this.lastOutputTime.delete(sessionId)
           this.restartCount.delete(sessionId)
+          this.launchOptions.delete(sessionId)
           cleaned++
         }
       }
