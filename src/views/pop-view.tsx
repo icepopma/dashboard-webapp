@@ -7,9 +7,10 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { 
   Bot, Activity, Clock, CheckCircle2, AlertCircle, Zap, 
-  TrendingUp, Users, MessageSquare, Play, Pause, RotateCcw
+  TrendingUp, Users, MessageSquare, Play, Pause, RotateCcw, ListTodo
 } from 'lucide-react'
-import type { AgentType } from '@/orchestrator/types'
+import type { AgentType, Task } from '@/orchestrator/types'
+import { CreateTaskDialog } from '@/components/create-task-dialog'
 
 interface AgentConfig {
   name: string
@@ -45,6 +46,7 @@ interface AgentData {
 export function PopView() {
   const { t } = useI18n()
   const [data, setData] = useState<AgentData | null>(null)
+  const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -63,10 +65,26 @@ export function PopView() {
     }
   }
 
+  // 获取任务列表
+  const fetchTasks = async () => {
+    try {
+      const response = await fetch('/api/tasks')
+      if (!response.ok) throw new Error('Failed to fetch tasks')
+      const result = await response.json()
+      setTasks(result.tasks || [])
+    } catch (err) {
+      console.error('Failed to fetch tasks:', err)
+    }
+  }
+
   useEffect(() => {
     fetchAgentStates()
+    fetchTasks()
     // 每 30 秒刷新一次
-    const interval = setInterval(fetchAgentStates, 30000)
+    const interval = setInterval(() => {
+      fetchAgentStates()
+      fetchTasks()
+    }, 30000)
     return () => clearInterval(interval)
   }, [])
 
@@ -132,7 +150,14 @@ export function PopView() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={fetchAgentStates}>
+          <CreateTaskDialog onTaskCreated={() => {
+            fetchTasks()
+            fetchAgentStates()
+          }} />
+          <Button variant="outline" size="sm" onClick={() => {
+            fetchAgentStates()
+            fetchTasks()
+          }}>
             <RotateCcw className="h-4 w-4 mr-2" />
             刷新
           </Button>
@@ -251,9 +276,10 @@ export function PopView() {
           </Card>
         </div>
 
-        {/* Right - Activity Log */}
-        <div className="w-80 flex-shrink-0">
-          <Card className="border-border/60 shadow-sm h-full">
+        {/* Right - Activity Log & Tasks */}
+        <div className="w-80 flex-shrink-0 flex flex-col gap-4">
+          {/* Active Sessions */}
+          <Card className="border-border/60 shadow-sm flex-1">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
                 <MessageSquare className="h-4 w-4 text-purple-500" />
@@ -279,6 +305,47 @@ export function PopView() {
                 {(!data?.activeSessions || data.activeSessions.length === 0) && (
                   <div className="text-sm text-muted-foreground text-center py-8">
                     暂无活跃会话
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Recent Tasks */}
+          <Card className="border-border/60 shadow-sm flex-1">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <ListTodo className="h-4 w-4 text-orange-500" />
+                最近任务
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="overflow-auto h-[calc(100%-60px)]">
+              <div className="space-y-2">
+                {tasks.slice(0, 5).map((task) => (
+                  <div key={task.id} className="p-2.5 rounded-lg bg-muted/30 text-sm">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">{task.title}</div>
+                        <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2">
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] ${
+                            task.status === 'completed' ? 'bg-green-500/20 text-green-500' :
+                            task.status === 'running' ? 'bg-blue-500/20 text-blue-500' :
+                            task.status === 'failed' ? 'bg-red-500/20 text-red-500' :
+                            'bg-gray-500/20 text-gray-500'
+                          }`}>
+                            {task.status === 'completed' ? '✓ 完成' :
+                             task.status === 'running' ? '▶ 运行中' :
+                             task.status === 'failed' ? '✗ 失败' : '○ 待处理'}
+                          </span>
+                          {task.agent && <span>→ {task.agent}</span>}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {tasks.length === 0 && (
+                  <div className="text-sm text-muted-foreground text-center py-8">
+                    暂无任务
                   </div>
                 )}
               </div>

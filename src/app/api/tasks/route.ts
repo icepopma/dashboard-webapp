@@ -67,6 +67,10 @@ export async function POST(request: Request) {
       priority: priority || 'medium',
       status: 'pending',
       goal: goal || title,
+      context: {
+        requirements: [],
+        constraints: [],
+      },
       createdAt: new Date(),
       updatedAt: new Date(),
       maxAttempts: 3,
