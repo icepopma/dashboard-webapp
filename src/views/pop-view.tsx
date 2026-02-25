@@ -136,9 +136,9 @@ export function PopView() {
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4 px-6 pt-6 flex-shrink-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 px-4 sm:px-6 pt-4 sm:pt-6 flex-shrink-0">
         <div>
-          <h2 className="text-2xl font-semibold flex items-center gap-2">
+          <h2 className="text-xl sm:text-2xl font-semibold flex items-center gap-2">
             🫧 Pop
             <Badge className="bg-green-500/20 text-green-500 text-xs">
               <span className="w-2 h-2 rounded-full bg-green-500 mr-1.5 animate-pulse" />
@@ -158,15 +158,15 @@ export function PopView() {
             fetchAgentStates()
             fetchTasks()
           }}>
-            <RotateCcw className="h-4 w-4 mr-2" />
-            刷新
+            <RotateCcw className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">刷新</span>
           </Button>
         </div>
       </div>
 
       {/* Stats Row */}
-      <div className="px-6 mb-4 flex-shrink-0">
-        <div className="grid grid-cols-4 gap-3">
+      <div className="px-4 sm:px-6 mb-4 flex-shrink-0">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Card className="border-border/60 shadow-sm">
             <CardContent className="p-3">
               <div className="flex items-center gap-2">
@@ -226,9 +226,9 @@ export function PopView() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 px-6 pb-6 overflow-hidden flex gap-4">
+      <div className="flex-1 px-4 sm:px-6 pb-6 overflow-hidden flex flex-col lg:flex-row gap-4">
         {/* Left - Agent Grid */}
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-auto min-w-0">
           <Card className="border-border/60 shadow-sm h-full">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
@@ -237,7 +237,7 @@ export function PopView() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {data?.agents.map((agent) => (
                   <div 
                     key={agent.type}

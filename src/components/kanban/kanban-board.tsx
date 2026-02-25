@@ -225,12 +225,12 @@ export function KanbanBoard({ onTabChange }: KanbanBoardProps) {
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4 px-6 flex-shrink-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 px-4 sm:px-6 flex-shrink-0">
         <div>
-          <h2 className="text-2xl font-semibold">{t('tasks.title')}</h2>
+          <h2 className="text-xl sm:text-2xl font-semibold">{t('tasks.title')}</h2>
           <p className="text-sm text-muted-foreground">{t('tasks.subtitle')}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {/* View Mode Toggle */}
           <div className="flex border border-border rounded-lg overflow-hidden">
             {viewModeButtons.map((btn) => {
@@ -277,8 +277,8 @@ export function KanbanBoard({ onTabChange }: KanbanBoardProps) {
 
       {/* Bulk Actions Bar */}
       {selectedTasks.length > 0 && (
-        <div className="px-6 mb-2 flex-shrink-0">
-          <div className="flex items-center gap-3 p-2 bg-primary/10 rounded-lg border border-primary/20">
+        <div className="px-4 sm:px-6 mb-2 flex-shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 p-2 bg-primary/10 rounded-lg border border-primary/20 overflow-x-auto">
             <Badge variant="secondary">{selectedTasks.length} 已选</Badge>
             <div className="flex gap-1">
               <Button size="sm" variant="outline" onClick={() => handleBulkStatusChange('in-progress')}>
@@ -299,7 +299,7 @@ export function KanbanBoard({ onTabChange }: KanbanBoardProps) {
       )}
 
       {/* Stats */}
-      <div className="px-6 mb-4 flex-shrink-0">
+      <div className="px-4 sm:px-6 mb-4 flex-shrink-0">
         <TaskStats
           stats={stats}
           onNewTask={handleNewTask}
@@ -311,14 +311,14 @@ export function KanbanBoard({ onTabChange }: KanbanBoardProps) {
       </div>
 
       {/* Board */}
-      <div className="flex-1 overflow-x-auto px-6 pb-6">
+      <div className="flex-1 overflow-x-auto px-4 sm:px-6 pb-6">
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <Loader2 className="h-12 w-12 animate-spin text-muted-foreground" />
           </div>
         ) : viewMode === 'kanban' ? (
           <DndContext onDragEnd={handleDragEnd}>
-            <div className="flex gap-3 h-full">
+            <div className="flex gap-3 h-full min-w-max sm:min-w-0">
               {columns.map((column) => (
                 <KanbanColumn 
                   key={column.id} 

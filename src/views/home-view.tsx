@@ -144,7 +144,7 @@ export function HomeView() {
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4 px-6 pt-6 flex-shrink-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 px-6 pt-6 flex-shrink-0">
         <div>
           <h2 className="text-2xl font-semibold">{t('home.title')}</h2>
           <p className="text-sm text-muted-foreground mt-1">
@@ -154,18 +154,18 @@ export function HomeView() {
         <div className="flex gap-2">
           <Button variant="outline" size="sm" className="gap-2" onClick={() => { fetchAgentStates(); fetchStats(); }}>
             <RotateCcw className="h-4 w-4" />
-            {t('common.sync')}
+            <span className="hidden sm:inline">{t('common.sync')}</span>
           </Button>
           <Button size="sm" className="gap-2">
             <Plus className="h-4 w-4" />
-            {t('common.newIdea')}
+            <span className="hidden sm:inline">{t('common.newIdea')}</span>
           </Button>
         </div>
       </div>
 
       {/* Stats Grid */}
       <div className="px-6 mb-4 flex-shrink-0">
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Card className="border-border/60 shadow-sm">
             <CardContent className="p-3">
               <div className="flex items-center gap-2">
@@ -225,9 +225,9 @@ export function HomeView() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 px-6 pb-6 overflow-hidden flex gap-4">
+      <div className="flex-1 px-6 pb-6 overflow-hidden flex flex-col lg:flex-row gap-4">
         {/* Left Column - Team Online */}
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-auto min-w-0">
           <Card className="border-border/60 shadow-sm h-full">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
