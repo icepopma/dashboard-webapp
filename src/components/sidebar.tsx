@@ -23,6 +23,7 @@ import {
   X,
   Sparkles,
 } from 'lucide-react'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 const navItems = [
   { id: 'pop', icon: Sparkles },
@@ -128,8 +129,11 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
 
         {/* Footer */}
         <div className="p-4 border-t border-border">
-          <div className="text-xs text-muted-foreground text-center">
-            v1.0.0 • OpenClaw
+          <div className="flex items-center justify-between">
+            <div className="text-xs text-muted-foreground">
+              v1.0.0 • OpenClaw
+            </div>
+            <ThemeToggle />
           </div>
         </div>
       </aside>
