@@ -1,204 +1,226 @@
 'use client'
 
-import { useState } from 'react'
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, addWeeks, subWeeks, isToday } from 'date-fns'
-import { Button } from '@/components/ui/button'
+import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ChevronLeft, ChevronRight, Clock, Repeat, CalendarDays, Zap } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Calendar, Clock, RotateCcw, CheckCircle, AlertCircle } from 'lucide-react'
 import { useI18n } from '@/lib/i18n'
 
-interface ScheduledTask {
+interface CalendarTask {
   id: string
   title: string
-  date: Date
-  time: string
-  type: 'cron' | 'scheduled' | 'one-time'
+  type: 'cron' | 'scheduled' | 'oneTime'
+  status: 'pending' | 'running' | 'completed' | 'failed'
+  scheduledFor: string
+  agent?: string
 }
-
-const scheduledTasks: ScheduledTask[] = [
-  { id: 'task-1', title: 'mission control check', date: new Date(), time: '08:00', type: 'cron' },
-  { id: 'task-2', title: 'morning brief', date: new Date(), time: '09:00', type: 'scheduled' },
-  { id: 'task-3', title: 'competitor youtube scan', date: new Date(), time: '10:00', type: 'scheduled' },
-  { id: 'task-4', title: 'ai scarcity research', date: new Date(), time: '11:00', type: 'scheduled' },
-  { id: 'task-5', title: 'newsletter reminder', date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), time: '14:00', type: 'one-time' },
-]
-
-const alwaysRunning = [
-  { id: 'cron-1', title: 'mission control check', interval: 'Every 30 min' },
-  { id: 'cron-2', title: 'health check', interval: 'Every 1 hour' },
-]
 
 export function CalendarView() {
   const { t } = useI18n()
-  const [currentDate, setCurrentDate] = useState(new Date())
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [tasks, setTasks] = useState<CalendarTask[]>([])
+  const [loading, setLoading] = useState(true)
+  const [viewMode, setViewMode] = useState<'day' | 'week'>('day')
 
-  const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 })
-  const weekEnd = endOfWeek(currentDate, { weekStartsOn: 0 })
-  const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd })
-
-  const getTasksForDate = (date: Date) => scheduledTasks.filter((task) => isSameDay(task.date, date))
-
-  const getTaskTypeColor = (type: string) => {
-    switch (type) {
-      case 'cron': return 'bg-blue-500/10 text-blue-500 border-blue-500/20'
-      case 'scheduled': return 'bg-purple-500/10 text-purple-500 border-purple-500/20'
-      case 'one-time': return 'bg-orange-500/10 text-orange-500 border-orange-500/20'
-      default: return ''
+  const fetchTasks = async () => {
+    try {
+      // 模拟从 sync API 获取定时任务
+      const res = await fetch('/api/sync')
+      const data = await res.json()
+      
+      // 添加一些模拟的日历任务
+      const calendarTasks: CalendarTask[] = [
+        {
+          id: 'cal-001',
+          title: '每日工作日志',
+          type: 'cron',
+          status: 'pending',
+          scheduledFor: new Date(Date.now() + 3600000).toISOString(),
+          agent: 'Pop',
+        },
+        {
+          id: 'cal-002',
+          title: '开发进度检查',
+          type: 'cron',
+          status: 'pending',
+          scheduledFor: new Date(Date.now() + 7200000).toISOString(),
+          agent: 'Pop',
+        },
+        {
+          id: 'cal-003',
+          title: '内容发布提醒',
+          type: 'scheduled',
+          status: 'pending',
+          scheduledFor: new Date(Date.now() + 86400000).toISOString(),
+          agent: 'Echo',
+        },
+        {
+          id: 'cal-004',
+          title: '周报生成',
+          type: 'cron',
+          status: 'completed',
+          scheduledFor: new Date(Date.now() - 3600000).toISOString(),
+          agent: 'Pop',
+        },
+      ]
+      setTasks(calendarTasks)
+    } catch (err) {
+      console.error('Failed to fetch calendar tasks:', err)
+    } finally {
+      setLoading(false)
     }
   }
 
-  const getTaskBgColor = (type: string) => {
+  useEffect(() => {
+    fetchTasks()
+  }, [])
+
+  const getTypeBadge = (type: string) => {
     switch (type) {
-      case 'cron': return 'bg-blue-500'
-      case 'scheduled': return 'bg-purple-500'
-      case 'one-time': return 'bg-orange-500'
-      default: return 'bg-gray-500'
+      case 'cron': return <Badge className="bg-blue-500/10 text-blue-500">{t('calendar.taskTypes.cron')}</Badge>
+      case 'scheduled': return <Badge className="bg-purple-500/10 text-purple-500">{t('calendar.taskTypes.scheduled')}</Badge>
+      case 'oneTime': return <Badge className="bg-green-500/10 text-green-500">{t('calendar.taskTypes.oneTime')}</Badge>
+      default: return null
     }
   }
 
-  const now = new Date()
-  const nextUp = scheduledTasks
-    .filter((task) => task.date >= now)
-    .sort((a, b) => a.date.getTime() - b.date.getTime())
-    .slice(0, 5)
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'completed': return <CheckCircle className="h-4 w-4 text-green-500" />
+      case 'failed': return <AlertCircle className="h-4 w-4 text-red-500" />
+      case 'running': return <Clock className="h-4 w-4 text-blue-500 animate-spin" />
+      default: return <Clock className="h-4 w-4 text-muted-foreground" />
+    }
+  }
 
-  const getTimeUntil = (date: Date) => {
-    const diff = date.getTime() - now.getTime()
-    const hours = Math.floor(diff / (1000 * 60 * 60))
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-    if (hours > 0) return `in ${hours}h`
-    if (minutes > 0) return `in ${minutes}m`
-    return 'now'
+  const formatTime = (dateStr: string) => {
+    const date = new Date(dateStr)
+    return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+  }
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr)
+    const today = new Date()
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    
+    if (date.toDateString() === today.toDateString()) return '今天'
+    if (date.toDateString() === tomorrow.toDateString()) return '明天'
+    return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
+  }
+
+  const upcomingTasks = tasks.filter(t => t.status === 'pending').sort((a, b) => 
+    new Date(a.scheduledFor).getTime() - new Date(b.scheduledFor).getTime()
+  )
+  const completedTasks = tasks.filter(t => t.status === 'completed' || t.status === 'failed')
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    )
   }
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4 px-6 flex-shrink-0">
+      <div className="flex items-center justify-between mb-4 px-6 pt-6 flex-shrink-0">
         <div>
           <h2 className="text-2xl font-semibold">{t('calendar.title')}</h2>
-          <p className="text-sm text-muted-foreground">{t('calendar.subtitle')}</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            {t('calendar.subtitle')}
+          </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="default" size="sm">{t('calendar.week')}</Button>
-          <Button variant="outline" size="sm" onClick={() => setCurrentDate(new Date())}>
-            {t('calendar.today')}
+        <div className="flex items-center gap-2">
+          <div className="flex rounded-lg border border-border overflow-hidden">
+            <button
+              onClick={() => setViewMode('day')}
+              className={`px-3 py-1.5 text-sm ${viewMode === 'day' ? 'bg-primary text-primary-foreground' : 'bg-background'}`}
+            >
+              {t('calendar.today')}
+            </button>
+            <button
+              onClick={() => setViewMode('week')}
+              className={`px-3 py-1.5 text-sm ${viewMode === 'week' ? 'bg-primary text-primary-foreground' : 'bg-background'}`}
+            >
+              {t('calendar.week')}
+            </button>
+          </div>
+          <Button variant="outline" size="sm" onClick={fetchTasks}>
+            <RotateCcw className="h-4 w-4 mr-2" />
+            刷新
           </Button>
         </div>
       </div>
 
-      <div className="flex-1 px-6 pb-6 flex gap-6 overflow-hidden">
-        {/* Main Calendar Area */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Scheduled Tasks Section */}
-          <Card className="mb-4 border-border/60 flex-shrink-0">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Zap className="h-4 w-4 text-blue-500" />
-                {t('calendar.scheduledTasks')}
+      {/* Content */}
+      <div className="flex-1 px-6 pb-6 overflow-auto flex gap-4">
+        {/* Upcoming */}
+        <div className="flex-1">
+          <Card className="border-border/60 shadow-sm h-full">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-blue-500" />
+                {t('calendar.nextUp')}
               </CardTitle>
-              <p className="text-xs text-muted-foreground mt-1">Pop's {t('calendar.automatedRoutines')}</p>
             </CardHeader>
-            <CardContent className="pt-0">
-              <div className="text-xs font-medium text-muted-foreground mb-2">{t('calendar.alwaysRunning')}</div>
-              <div className="flex flex-wrap gap-2">
-                {alwaysRunning.map((cron) => (
-                  <Badge key={cron.id} variant="outline" className="gap-1.5 bg-blue-500/5">
-                    <Repeat className="h-3 w-3 text-blue-500" />
-                    <span>{cron.title}</span>
-                    <span className="text-muted-foreground">• {cron.interval}</span>
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Week View Calendar */}
-          <Card className="flex-1 border-border/60 overflow-hidden flex flex-col">
-            <CardHeader className="pb-3 flex-shrink-0">
-              <div className="flex items-center justify-between">
-                <CardTitle>{format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d, yyyy')}</CardTitle>
-                <div className="flex gap-1">
-                  <Button variant="outline" size="sm" onClick={() => setCurrentDate(subWeeks(currentDate, 1))}>
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => setCurrentDate(addWeeks(currentDate, 1))}>
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
+            <CardContent>
+              {upcomingTasks.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  {t('calendar.noUpcoming')}
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent className="flex-1 overflow-hidden p-4 pt-0">
-              <div className="h-full flex flex-col">
-                <div className="grid grid-cols-7 gap-2 mb-2 flex-shrink-0">
-                  {weekDays.map((day) => (
-                    <div key={day.toString()} className={`text-center text-xs font-medium py-2 rounded ${isToday(day) ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>
-                      <div>{format(day, 'EEE')}</div>
-                      <div className="text-lg font-semibold">{format(day, 'd')}</div>
+              ) : (
+                <div className="space-y-2">
+                  {upcomingTasks.map(task => (
+                    <div key={task.id} className="p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            {getStatusIcon(task.status)}
+                            <span className="font-medium text-sm">{task.title}</span>
+                          </div>
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                            <span>{formatDate(task.scheduledFor)} {formatTime(task.scheduledFor)}</span>
+                            {task.agent && <span>• {task.agent}</span>}
+                          </div>
+                        </div>
+                        {getTypeBadge(task.type)}
+                      </div>
                     </div>
                   ))}
                 </div>
-
-                <div className="flex-1 grid grid-cols-7 gap-2">
-                  {weekDays.map((day) => {
-                    const tasks = getTasksForDate(day)
-                    const isSelected = selectedDate && isSameDay(day, selectedDate)
-
-                    return (
-                      <button key={day.toString()} onClick={() => setSelectedDate(day)}
-                        className={`flex-1 border rounded-lg p-2 text-left transition-all overflow-hidden flex flex-col ${isToday(day) ? 'border-primary bg-primary/5' : 'border-border'} ${isSelected ? 'ring-2 ring-primary' : ''} hover:bg-accent`}>
-                        <div className="space-y-1 flex-1 overflow-hidden">
-                          {tasks.slice(0, 3).map((task) => (
-                            <div key={task.id} className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] truncate ${getTaskTypeColor(task.type)}`}>
-                              <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${getTaskBgColor(task.type)}`} />
-                              <span className="truncate">{task.title}</span>
-                            </div>
-                          ))}
-                          {tasks.length > 3 && (
-                            <div className="text-[10px] text-muted-foreground px-1">+{tasks.length - 3} {t('calendar.more')}</div>
-                          )}
-                        </div>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Side Panel */}
-        <div className="w-72 flex-shrink-0 flex flex-col gap-4 overflow-hidden">
-          <Card className="border-border/60 flex-shrink-0">
-            <CardHeader className="pb-3"><CardTitle className="text-sm">Task Types</CardTitle></CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex items-center gap-2"><Repeat className="h-4 w-4 text-blue-500" /><span className="text-sm">{t('calendar.taskTypes.cron')}</span></div>
-              <div className="flex items-center gap-2"><Clock className="h-4 w-4 text-purple-500" /><span className="text-sm">{t('calendar.taskTypes.scheduled')}</span></div>
-              <div className="flex items-center gap-2"><CalendarDays className="h-4 w-4 text-orange-500" /><span className="text-sm">{t('calendar.taskTypes.oneTime')}</span></div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/60 flex-1 overflow-hidden flex flex-col">
-            <CardHeader className="pb-3 flex-shrink-0">
-              <CardTitle className="text-sm flex items-center gap-2"><Clock className="h-4 w-4" />{t('calendar.nextUp')}</CardTitle>
+        {/* Completed */}
+        <div className="w-80 flex-shrink-0">
+          <Card className="border-border/60 shadow-sm h-full">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-green-500" />
+                最近完成
+              </CardTitle>
             </CardHeader>
-            <CardContent className="flex-1 overflow-hidden pt-0">
-              <div className="space-y-2">
-                {nextUp.map((task) => (
-                  <div key={task.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${getTaskBgColor(task.type)}`} />
-                      <span className="text-sm truncate">{task.title}</span>
+            <CardContent>
+              {completedTasks.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground text-sm">
+                  暂无完成的任务
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {completedTasks.map(task => (
+                    <div key={task.id} className="p-2 rounded-lg bg-muted/20 text-sm">
+                      <div className="flex items-center gap-2">
+                        {getStatusIcon(task.status)}
+                        <span className="truncate">{task.title}</span>
+                      </div>
                     </div>
-                    <span className="text-xs text-muted-foreground flex-shrink-0 ml-2">{getTimeUntil(task.date)}</span>
-                  </div>
-                ))}
-                {nextUp.length === 0 && (
-                  <div className="text-center text-sm text-muted-foreground py-4">{t('calendar.noUpcoming')}</div>
-                )}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
