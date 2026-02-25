@@ -24,17 +24,31 @@ export function MemoryView() {
 
   const fetchData = async () => {
     try {
-      // 获取活动日志
-      const actRes = await fetch('/api/activity?limit=10')
+      // 获取活动日志 (真实数据)
+      const actRes = await fetch('/api/activity?limit=20')
       const actData = await actRes.json()
-      setActivities(actData.activities || [])
+      const rawActivities = actData.activities || []
+      setActivities(rawActivities)
       
-      // 模拟记忆数据
-      setMemories([
-        { id: 'mem-001', key: 'success:feature:dashboard', value: { pattern: '使用组件库加速开发' }, type: 'success', timestamp: new Date().toISOString() },
-        { id: 'mem-002', key: 'failure:bugfix:auth', value: { lesson: '认证逻辑变更需要测试覆盖' }, type: 'failure', timestamp: new Date(Date.now() - 86400000).toISOString() },
-        { id: 'mem-003', key: 'decision:framework', value: { decision: '选择 Next.js 作为前端框架' }, type: 'decision', timestamp: new Date(Date.now() - 172800000).toISOString() },
-      ])
+      // 从活动日志生成记忆条目
+      const memoryEntries: MemoryEntry[] = rawActivities.map((act: any) => {
+        const typeMap: Record<string, 'success' | 'failure' | 'context' | 'decision'> = {
+          complete: 'success',
+          pr: 'success',
+          content: 'context',
+          publish: 'success',
+          analysis: 'context',
+          general: 'context',
+        }
+        return {
+          id: act.id,
+          key: `${act.type || 'activity'}:${act.agent}:${act.action?.substring(0, 20)}`,
+          value: { action: act.action, metadata: act.metadata },
+          type: typeMap[act.type] || 'context',
+          timestamp: act.created_at,
+        }
+      })
+      setMemories(memoryEntries)
     } catch (err) {
       console.error('Failed to fetch memory data:', err)
     } finally {
