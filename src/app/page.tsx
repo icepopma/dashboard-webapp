@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react'
 import { Sidebar, NavItemId } from '@/components/sidebar'
 import { KanbanBoard } from '@/components/kanban/kanban-board'
+import { TasksView } from '@/views/tasks-view'
 import { PipelineView } from '@/views/pipeline-view'
 import { CalendarView } from '@/views/calendar-view'
 import { MemoryView } from '@/views/memory-view'
@@ -57,7 +58,7 @@ export default function HomePage() {
       case 'home':
         return <HomeView />
       case 'tasks':
-        return <KanbanBoard onTabChange={setActiveTab} />
+        return <TasksView />
       case 'content':
         return <PipelineView />
       case 'calendar':

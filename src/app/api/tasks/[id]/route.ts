@@ -32,7 +32,7 @@ export const PUT = apiHandler(async (request, context) => {
   const body = await parseJsonBody<{
     title?: string
     description?: string
-    status?: 'pending' | 'in-progress' | 'completed' | 'failed'
+    status?: 'todo' | 'in_progress' | 'done' | 'blocked'
     priority?: 'low' | 'medium' | 'high'
     assignee?: string
   }>(request)
@@ -50,9 +50,9 @@ export const PUT = apiHandler(async (request, context) => {
   }
 
   if (body.status !== undefined) {
-    validators.enum(body.status, ['pending', 'in-progress', 'completed', 'failed'], '状态')
+    validators.enum(body.status, ['todo', 'in_progress', 'done', 'blocked'], '状态')
     updates.status = body.status
-    if (body.status === 'completed') {
+    if (body.status === 'done') {
       updates.completed_at = new Date().toISOString()
     }
   }

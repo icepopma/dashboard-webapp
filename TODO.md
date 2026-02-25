@@ -1,6 +1,6 @@
 # Dashboard Web App 开发任务
 
-**更新时间**: 2026-02-25 16:20 UTC
+**更新时间**: 2026-02-25 22:10 UTC
 **状态**: 核心架构已完成，持续优化中
 
 ---
@@ -10,11 +10,12 @@
 ### 已完成 ✅
 | 模块 | 状态 | 说明 |
 |------|------|------|
-| 前端 UI (12页面) | ✅ | 所有页面和组件已实现 |
+| 前端 UI (13页面) | ✅ | 所有页面和组件已实现 |
 | 后端 API (ideas/tasks) | ✅ | Supabase CRUD 可用 |
 | /api/agents | ✅ | 智能体状态 API |
 | Pop 标签 | ✅ | 智能体集群展示 |
 | HomeView 实时数据 | ✅ | 已连接真实 API |
+| TasksView 任务页面 | ✅ | 看板/列表双视图，支持筛选排序 |
 | 智能体集群架构 | ✅ | orchestrator/memory/launcher/monitor/notify |
 | 每日日志 Cron | ✅ | 23:50 自动发送 |
 
@@ -24,6 +25,20 @@
 | 智能体实际启动 | 🔄 | AgentLauncher 已实现，需与真实智能体连接 |
 | 实时 WebSocket | 🔄 | 当前用 polling，可升级为 WebSocket |
 | 更多 API 端点 | 🔄 | 按需扩展 |
+
+---
+
+## 📋 最近更新
+
+### 2026-02-25
+- [x] 创建 `tasks-view.tsx` - 完整的任务管理页面
+  - 看板视图（四列：待办/进行中/已完成/阻塞）
+  - 列表视图
+  - 状态筛选、优先级/截止日期/创建时间排序
+  - 实时统计数据
+- [x] 修复 API 状态值不一致问题
+  - 统一 tasks API 状态为: `todo` | `in_progress` | `done` | `blocked`
+- [x] 更新路由配置，Tasks 页面使用新的 TasksView
 
 ---
 
@@ -67,7 +82,12 @@ src/
 ├── lib/
 │   └── agent-state.ts  # 智能体状态管理
 └── views/
-    └── pop-view.tsx    # Pop 标签页面
+    ├── pop-view.tsx    # Pop 标签页面
+    ├── tasks-view.tsx  # 任务管理页面 (NEW)
+    ├── home-view.tsx   # 首页
+    ├── calendar-view.tsx # 日历
+    ├── memory-view.tsx # 记忆
+    └── ...             # 其他页面
 ```
 
 ---
@@ -80,4 +100,4 @@ src/
 
 ---
 
-*最后更新: 2026-02-25 16:20 UTC*
+*最后更新: 2026-02-25 22:10 UTC*
