@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────────────────────────
 
 import type { AgentType, AgentSession, AgentStatus } from '@/orchestrator/types'
+import { realtimeBus } from '@/lib/realtime-bus'
 
 // 智能体配置
 export const AGENT_CONFIGS: Record<AgentType, {
@@ -106,6 +107,8 @@ class AgentStateStore {
     const current = this.states.get(type)
     if (current) {
       this.states.set(type, { ...current, ...updates, lastActivity: new Date() })
+      // 触发实时更新
+      this.broadcastUpdate()
     }
   }
 
@@ -122,6 +125,8 @@ class AgentStateStore {
         lastActivity: new Date(),
       })
     }
+    // 触发实时更新
+    this.broadcastUpdate()
   }
 
   // 更新会话
@@ -145,6 +150,23 @@ class AgentStateStore {
           })
         }
       }
+      // 触发实时更新
+      this.broadcastUpdate()
+    }
+  }
+
+  // 广播更新
+  private broadcastUpdate(): void {
+    try {
+      realtimeBus.publishAgentsUpdate({
+        agents: this.getAllStates(),
+        activeSessions: this.getActiveSessions(),
+        popTasks: this.getPopTasks(),
+        timestamp: new Date().toISOString(),
+      })
+    } catch (err) {
+      // realtimeBus 可能未初始化（在服务器端）
+      console.debug('Failed to broadcast update:', err)
     }
   }
 
