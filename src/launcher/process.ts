@@ -6,9 +6,15 @@ import type { AgentType, AgentSession } from '../orchestrator/types'
 import { spawn, ChildProcess } from 'child_process'
 import path from 'path'
 import fs from 'fs/promises'
+import { EventEmitter } from 'events'
 
 const WORKTREES_DIR = process.env.WORKTREES_DIR || './.clawdbot/worktrees'
 const LOGS_DIR = process.env.LOGS_DIR || './.clawdbot/logs'
+
+// 健康检查配置
+const HEALTH_CHECK_INTERVAL = 30000 // 30秒
+const STALLED_THRESHOLD = 5 * 60 * 1000 // 5分钟无输出视为卡住
+const MAX_RESTARTS = 2 // 最大重启次数
 
 interface LaunchOptions {
   agent: AgentType
@@ -18,12 +24,17 @@ interface LaunchOptions {
   tmux?: boolean
 }
 
-export class AgentLauncher {
+export class AgentLauncher extends EventEmitter {
   private sessions: Map<string, AgentSession> = new Map()
   private processes: Map<string, ChildProcess> = new Map()
+  private healthCheckTimer?: NodeJS.Timeout
+  private lastOutputTime: Map<string, number> = new Map()
+  private restartCount: Map<string, number> = new Map()
 
   constructor() {
+    super()
     this.ensureDirs()
+    this.startHealthCheck()
   }
 
   private async ensureDirs(): Promise<void> {
@@ -97,7 +108,9 @@ export class AgentLauncher {
     proc.on('spawn', () => {
       session.status = 'running'
       session.pid = proc.pid
+      this.lastOutputTime.set(session.id, Date.now())
       this.sessions.set(session.id, session)
+      this.emit('started', { sessionId: session.id, pid: proc.pid })
     })
 
     proc.on('close', (code) => {
@@ -105,6 +118,12 @@ export class AgentLauncher {
       session.endTime = new Date()
       this.sessions.set(session.id, session)
       this.processes.delete(session.id)
+      this.emit('closed', { sessionId: session.id, code })
+    })
+
+    proc.on('error', (err) => {
+      console.error(`[AgentLauncher] 进程错误:`, err)
+      this.emit('error', { sessionId: session.id, error: err })
     })
 
     this.processes.set(session.id, proc)
@@ -291,5 +310,123 @@ export class AgentLauncher {
 Task ID: ${taskId}
 When complete, create a PR with a clear description.
 Include screenshots if UI changes are made.`
+  }
+
+  /**
+   * 启动健康检查
+   */
+  private startHealthCheck(): void {
+    this.healthCheckTimer = setInterval(() => {
+      this.checkAllSessions()
+    }, HEALTH_CHECK_INTERVAL)
+  }
+
+  /**
+   * 检查所有会话健康状态
+   */
+  private async checkAllSessions(): Promise<void> {
+    const now = Date.now()
+
+    for (const [sessionId, session] of this.sessions) {
+      if (session.status !== 'running') continue
+
+      const lastOutput = this.lastOutputTime.get(sessionId) || session.startTime.getTime()
+      const timeSinceLastOutput = now - lastOutput
+
+      // 检查是否卡住
+      if (timeSinceLastOutput > STALLED_THRESHOLD) {
+        console.warn(`[AgentLauncher] 会话 ${sessionId} 可能卡住 (${Math.round(timeSinceLastOutput / 1000)}s 无输出)`)
+        this.emit('stalled', { sessionId, timeSinceLastOutput })
+
+        // 尝试重启
+        const restarts = this.restartCount.get(sessionId) || 0
+        if (restarts < MAX_RESTARTS) {
+          await this.restartSession(sessionId)
+        } else {
+          console.error(`[AgentLauncher] 会话 ${sessionId} 已达最大重启次数`)
+          await this.terminate(session)
+          session.status = 'failed'
+          this.sessions.set(sessionId, session)
+          this.emit('failed', { sessionId, reason: 'Exceeded max restarts' })
+        }
+      }
+    }
+  }
+
+  /**
+   * 重启会话
+   */
+  private async restartSession(sessionId: string): Promise<void> {
+    const session = this.sessions.get(sessionId)
+    if (!session) return
+
+    console.log(`[AgentLauncher] 重启会话 ${sessionId}`)
+    const restarts = (this.restartCount.get(sessionId) || 0) + 1
+    this.restartCount.set(sessionId, restarts)
+
+    // 终止旧进程
+    await this.terminate(session)
+
+    this.emit('restarting', { sessionId, attempt: restarts })
+
+    // TODO: 重新启动需要保存原始 prompt 和 options
+    // 这里暂时只标记状态
+    session.status = 'starting'
+    this.sessions.set(sessionId, session)
+  }
+
+  /**
+   * 获取所有会话状态
+   */
+  getAllSessions(): AgentSession[] {
+    return Array.from(this.sessions.values())
+  }
+
+  /**
+   * 获取会话详情
+   */
+  getSession(sessionId: string): AgentSession | undefined {
+    return this.sessions.get(sessionId)
+  }
+
+  /**
+   * 清理已完成/失败的会话
+   */
+  cleanupOldSessions(maxAge: number = 24 * 60 * 60 * 1000): number {
+    const now = Date.now()
+    let cleaned = 0
+
+    for (const [sessionId, session] of this.sessions) {
+      if (session.status === 'completed' || session.status === 'failed') {
+        const endTime = session.endTime?.getTime() || session.startTime.getTime()
+        if (now - endTime > maxAge) {
+          this.sessions.delete(sessionId)
+          this.processes.delete(sessionId)
+          this.lastOutputTime.delete(sessionId)
+          this.restartCount.delete(sessionId)
+          cleaned++
+        }
+      }
+    }
+
+    return cleaned
+  }
+
+  /**
+   * 关闭启动器
+   */
+  async shutdown(): Promise<void> {
+    if (this.healthCheckTimer) {
+      clearInterval(this.healthCheckTimer)
+    }
+
+    // 终止所有运行中的会话
+    for (const session of this.sessions.values()) {
+      if (session.status === 'running') {
+        await this.terminate(session)
+      }
+    }
+
+    this.emit('shutdown')
   }
 }
