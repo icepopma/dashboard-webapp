@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { DM_Sans, Inter } from "next/font/google";
 import "./globals.css";
 import { I18nProvider } from "@/lib/i18n";
+import { QueryProvider } from "@/lib/query-provider";
+import { RealtimeProvider } from "@/lib/realtime-provider";
 
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",
@@ -31,7 +33,11 @@ export default function RootLayout({
         className={`${dmSans.variable} ${inter.variable} antialiased`}
       >
         <I18nProvider>
-          {children}
+          <QueryProvider>
+            <RealtimeProvider>
+              {children}
+            </RealtimeProvider>
+          </QueryProvider>
         </I18nProvider>
       </body>
     </html>

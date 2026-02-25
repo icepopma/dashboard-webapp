@@ -8,18 +8,10 @@ import { Button } from '@/components/ui/button'
 import { RefreshCw, Loader2 } from 'lucide-react'
 import { NavItemId } from '@/components/sidebar'
 import { useI18n } from '@/lib/i18n'
+import { useTasks, useUpdateTask } from '@/lib/use-query'
+import { TaskCardData } from './task-card'
 
-export interface TaskCardData {
-  id: string
-  title: string
-  description?: string
-  priority: 'high' | 'medium' | 'low'
-  assignee: 'Matt' | 'Pop'
-  estimatedHours?: number
-  tags?: string[]
-  createdAt?: string
-  project?: string
-}
+export { type TaskCardData }
 
 interface KanbanBoardProps {
   onTabChange?: (tab: NavItemId) => void
@@ -27,86 +19,59 @@ interface KanbanBoardProps {
 
 export function KanbanBoard({ onTabChange }: KanbanBoardProps) {
   const { t } = useI18n()
-  const [loading, setLoading] = useState(false)
+  const { data: tasks = [], isLoading, refetch } = useTasks()
+  const updateTask = useUpdateTask()
+  
   const [assigneeFilter, setAssigneeFilter] = useState('all')
   const [projectFilter, setProjectFilter] = useState('all')
 
   const getDefaultColumns = (): KanbanColumnData[] => [
-    {
-      id: 'recurring',
-      title: t('tasks.recurring'),
-      tasks: [],
-      color: '#a855f7',
-    },
-    {
-      id: 'backlog',
-      title: t('tasks.backlog'),
-      tasks: [],
-      color: '#6b7280',
-    },
-    {
-      id: 'in-progress',
-      title: t('tasks.inProgress'),
-      tasks: [],
-      color: '#3b82f6',
-    },
-    {
-      id: 'review',
-      title: t('tasks.review'),
-      tasks: [],
-      color: '#eab308',
-    },
-    {
-      id: 'done',
-      title: t('tasks.done'),
-      tasks: [],
-      color: '#22c55e',
-    },
+    { id: 'recurring', title: t('tasks.recurring'), tasks: [], color: '#a855f7' },
+    { id: 'backlog', title: t('tasks.backlog'), tasks: [], color: '#6b7280' },
+    { id: 'in-progress', title: t('tasks.inProgress'), tasks: [], color: '#3b82f6' },
+    { id: 'review', title: t('tasks.review'), tasks: [], color: '#eab308' },
+    { id: 'done', title: t('tasks.done'), tasks: [], color: '#22c55e' },
   ]
 
-  const [columns, setColumns] = useState<KanbanColumnData[]>(getDefaultColumns)
+  // Transform tasks into card data
+  const transformTask = (task: any): TaskCardData => ({
+    id: task.id,
+    title: task.local_path?.split('/').pop() || 'Untitled',
+    description: task.idea_id ? `Idea: ${task.idea_id.substring(0, 8)}...` : undefined,
+    priority: task.priority || 'medium',
+    assignee: 'Pop' as const,
+    estimatedHours: task.estimated_hours,
+    tags: ['开发'],
+    project: 'Mission Control',
+    createdAt: task.created_at || new Date().toISOString(),
+  })
 
-  const fetchTasks = async () => {
-    setLoading(true)
-    try {
-      const response = await fetch('/api/tasks')
-      const data = await response.json()
+  // Group tasks by status
+  const columns: KanbanColumnData[] = getDefaultColumns().map((col) => {
+    const statusMap: Record<string, string> = {
+      recurring: 'todo',
+      backlog: 'todo',
+      'in-progress': 'in_progress',
+      review: 'in_progress',
+      done: 'completed',
+    }
+    
+    const columnTasks = tasks
+      .filter((t) => statusMap[col.id] === mapStatus(t.status))
+      .map(transformTask)
+    
+    return { ...col, tasks: columnTasks }
+  })
 
-      if (data.tasks) {
-        const statusMap: Record<string, string> = {
-          todo: 'backlog',
-          in_progress: 'in-progress',
-          completed: 'done',
-        }
-
-        const newColumns = getDefaultColumns().map((col) => ({
-          ...col,
-          tasks: data.tasks
-            .filter((t: any) => statusMap[t.status] === col.id)
-            .map((t: any) => ({
-              id: t.id,
-              title: t.local_path?.split('/').pop() || 'Untitled',
-              description: `Idea: ${t.idea_id?.substring(0, 8)}...`,
-              priority: t.priority || 'medium',
-              assignee: 'Pop' as const,
-              estimatedHours: t.estimated_hours,
-              tags: ['开发'],
-              project: 'Mission Control',
-            })),
-        }))
-
-        setColumns(newColumns)
-      }
-    } catch (error) {
-      console.error('Error fetching tasks:', error)
-    } finally {
-      setLoading(false)
+  // Map API status to column
+  function mapStatus(status: string): string {
+    switch (status) {
+      case 'todo': return 'todo'
+      case 'in_progress': return 'in_progress'
+      case 'completed': return 'completed'
+      default: return 'todo'
     }
   }
-
-  useEffect(() => {
-    fetchTasks()
-  }, [])
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event
@@ -115,51 +80,48 @@ export function KanbanBoard({ onTabChange }: KanbanBoardProps) {
     const activeId = active.id as string
     const overId = over.id as string
 
-    const sourceColumnIndex = columns.findIndex((col) =>
-      col.tasks.some((task) => task.id === activeId)
-    )
-    const targetColumnIndex = columns.findIndex((col) => col.id === overId)
+    // Find source and target columns
+    const sourceColumn = columns.find((col) => col.tasks.some((t) => t.id === activeId))
+    const targetColumn = columns.find((col) => col.id === overId)
 
-    if (sourceColumnIndex === -1 || targetColumnIndex === -1) return
+    if (!sourceColumn || !targetColumn) return
 
-    const [movedTask] = columns[sourceColumnIndex].tasks.splice(
-      columns[sourceColumnIndex].tasks.findIndex((t) => t.id === activeId),
-      1
-    )
-    columns[targetColumnIndex].tasks.push(movedTask)
-    setColumns([...columns])
-
-    try {
-      const statusMap: Record<string, string> = {
-        recurring: 'todo',
-        backlog: 'todo',
-        'in-progress': 'in_progress',
-        review: 'in_progress',
-        done: 'completed',
-      }
-
-      await fetch(`/api/tasks/${activeId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status: statusMap[columns[targetColumnIndex].id],
-        }),
-      })
-    } catch (error) {
-      console.error('Error updating task:', error)
+    // Map column to API status
+    const statusMap: Record<string, string> = {
+      recurring: 'todo',
+      backlog: 'todo',
+      'in-progress': 'in_progress',
+      review: 'in_progress',
+      done: 'completed',
     }
+
+    // Optimistic update via React Query mutation
+    updateTask.mutate({
+      taskId: activeId,
+      updates: { status: statusMap[targetColumn.id] as any },
+    })
   }
 
-  const handleRefresh = () => fetchTasks()
+  const handleRefresh = () => refetch()
   const handleNewTask = () => console.log('New task')
 
-  const allTasks = columns.flatMap((col) => col.tasks)
+  // Filter tasks based on assignee and project
+  const filteredColumns = columns.map((col) => ({
+    ...col,
+    tasks: col.tasks.filter((task) => {
+      if (assigneeFilter !== 'all' && task.assignee !== assigneeFilter) return false
+      // Add project filter logic here if needed
+      return true
+    }),
+  }))
+
+  const allTasks = filteredColumns.flatMap((col) => col.tasks)
   const stats = {
     thisWeek: allTasks.length,
-    inProgress: columns.find((c) => c.id === 'in-progress')?.tasks.length || 0,
+    inProgress: filteredColumns.find((c) => c.id === 'in-progress')?.tasks.length || 0,
     total: allTasks.length,
     completion: allTasks.length > 0 
-      ? Math.round((columns.find((c) => c.id === 'done')?.tasks.length || 0) / allTasks.length * 100)
+      ? Math.round((filteredColumns.find((c) => c.id === 'done')?.tasks.length || 0) / allTasks.length * 100)
       : 0,
   }
 
@@ -171,8 +133,8 @@ export function KanbanBoard({ onTabChange }: KanbanBoardProps) {
           <h2 className="text-2xl font-semibold">{t('tasks.title')}</h2>
           <p className="text-sm text-muted-foreground">{t('tasks.subtitle')}</p>
         </div>
-        <Button variant="outline" size="sm" onClick={handleRefresh} disabled={loading} className="gap-2">
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+        <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isLoading} className="gap-2">
+          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
           {t('common.refresh')}
         </Button>
       </div>
@@ -191,14 +153,14 @@ export function KanbanBoard({ onTabChange }: KanbanBoardProps) {
 
       {/* Board */}
       <div className="flex-1 overflow-x-auto px-6 pb-6">
-        {loading ? (
+        {isLoading ? (
           <div className="flex items-center justify-center h-full">
             <Loader2 className="h-12 w-12 animate-spin text-muted-foreground" />
           </div>
         ) : (
           <DndContext onDragEnd={handleDragEnd}>
             <div className="flex gap-4 h-full">
-              {columns.map((column) => (
+              {filteredColumns.map((column) => (
                 <KanbanColumn key={column.id} column={column} />
               ))}
             </div>
