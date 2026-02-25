@@ -184,7 +184,56 @@ function generateTitle(goal: string, keywords: string[]): string {
 }
 
 function suggestFiles(keywords: string[], area: string): string[] | undefined {
-  // 基于关键词建议相关文件
-  // TODO: 实现更智能的文件推荐
-  return undefined
+  // 基于关键词和区域建议相关文件
+  const suggestions: string[] = []
+  
+  // 区域映射到文件路径
+  const areaFileMap: Record<string, string[]> = {
+    'frontend': ['src/components/', 'src/app/', 'src/views/', 'src/hooks/'],
+    'backend': ['src/app/api/', 'src/lib/', 'src/services/'],
+    'auth': ['src/lib/auth/', 'src/middleware/', 'src/app/api/auth/'],
+    'testing': ['tests/', 'src/__tests__/', 'e2e/'],
+    'docs': ['README.md', 'docs/', 'CHANGELOG.md'],
+    'devops': ['.github/workflows/', 'Dockerfile', 'vercel.json'],
+  }
+  
+  // 添加区域相关的目录
+  if (areaFileMap[area]) {
+    suggestions.push(...areaFileMap[area])
+  }
+  
+  // 关键词映射到特定文件
+  const keywordFileMap: Record<string, string[]> = {
+    'agent': ['src/launcher/', 'src/orchestrator/', 'src/lib/agents/'],
+    'task': ['src/tasks/', 'src/orchestrator/', 'src/app/api/tasks/'],
+    'idea': ['src/lib/supabase.ts', 'src/app/api/ideas/'],
+    'memory': ['src/memory/', 'src/lib/memory/'],
+    'api': ['src/app/api/', 'src/lib/'],
+    'ui': ['src/components/ui/', 'src/components/'],
+    'button': ['src/components/ui/button.tsx'],
+    'modal': ['src/components/ui/dialog.tsx', 'src/components/ui/modal.tsx'],
+    'form': ['src/components/ui/form.tsx', 'src/components/'],
+    'test': ['tests/', 'playwright.config.ts'],
+    'auth': ['src/lib/auth/', 'src/middleware.ts'],
+    'database': ['src/lib/supabase.ts', 'supabase/'],
+    'theme': ['src/hooks/use-theme.ts', 'src/components/theme-toggle.tsx'],
+    'shortcut': ['src/hooks/use-keyboard-shortcut.ts', 'src/components/keyboard-shortcuts-help.tsx'],
+    'notify': ['src/notify/', 'src/components/ui/sonner.tsx'],
+    'orchestrator': ['src/orchestrator/', 'src/launcher/'],
+    'scanner': ['src/orchestrator/scanners/'],
+  }
+  
+  // 检查关键词并添加相关文件
+  for (const keyword of keywords) {
+    const lowerKeyword = keyword.toLowerCase()
+    for (const [key, files] of Object.entries(keywordFileMap)) {
+      if (lowerKeyword.includes(key) || key.includes(lowerKeyword)) {
+        suggestions.push(...files)
+      }
+    }
+  }
+  
+  // 去重并返回
+  const unique = [...new Set(suggestions)]
+  return unique.length > 0 ? unique : undefined
 }
