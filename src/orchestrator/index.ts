@@ -11,6 +11,7 @@ import { analyzeGoal } from './goalAnalyzer'
 import { selectAgent } from './agentSelector'
 import { buildPrompt } from './promptBuilder'
 import { ralphLoop } from './ralphLoop'
+import { scanGitHubIssues, scanSentryErrors, scanMeetingNotes } from './scanners'
 
 // Agent configurations
 const AGENT_CONFIGS: Record<AgentType, {
@@ -253,13 +254,48 @@ export class PopOrchestrator {
     const tasks: Task[] = []
 
     // 扫描 GitHub Issues
-    // TODO: 实现
+    try {
+      const githubTasks = await scanGitHubIssues({
+        owner: process.env.GITHUB_OWNER || '',
+        repo: process.env.GITHUB_REPO || '',
+        token: process.env.GITHUB_TOKEN,
+        labels: ['bug', 'enhancement'],  // 只扫描 bug 和 feature
+        limit: 5,
+      })
+      tasks.push(...githubTasks)
+      console.log(`[Pop] GitHub 扫描发现 ${githubTasks.length} 个 issues`)
+    } catch (error) {
+      console.error('[Pop] GitHub 扫描失败:', error)
+    }
 
     // 扫描 Sentry 错误
-    // TODO: 实现
+    try {
+      const sentryTasks = await scanSentryErrors({
+        organization: process.env.SENTRY_ORG || '',
+        project: process.env.SENTRY_PROJECT,
+        token: process.env.SENTRY_TOKEN,
+        environment: process.env.NODE_ENV === 'production' ? 'production' : undefined,
+        minCount: 5,
+        limit: 3,
+      })
+      tasks.push(...sentryTasks)
+      console.log(`[Pop] Sentry 扫描发现 ${sentryTasks.length} 个错误`)
+    } catch (error) {
+      console.error('[Pop] Sentry 扫描失败:', error)
+    }
 
     // 扫描会议记录
-    // TODO: 实现
+    try {
+      const meetingTasks = await scanMeetingNotes({
+        notesDir: process.env.MEETING_NOTES_DIR || './notes/meetings',
+        daysBack: 7,
+        limit: 5,
+      })
+      tasks.push(...meetingTasks)
+      console.log(`[Pop] 会议记录扫描发现 ${meetingTasks.length} 个待办`)
+    } catch (error) {
+      console.error('[Pop] 会议记录扫描失败:', error)
+    }
 
     return tasks
   }
