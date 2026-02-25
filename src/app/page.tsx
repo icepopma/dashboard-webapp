@@ -14,12 +14,15 @@ import { CouncilView } from '@/views/council-view'
 import { ProjectsView } from '@/views/projects-view'
 import { DocsView } from '@/views/docs-view'
 import { PeopleView } from '@/views/people-view'
+import { PopView } from '@/views/pop-view'
 
 export default function HomePage() {
-  const [activeTab, setActiveTab] = useState<NavItemId>('tasks')
+  const [activeTab, setActiveTab] = useState<NavItemId>('pop')
 
   const renderContent = () => {
     switch (activeTab) {
+      case 'pop':
+        return <PopView />
       case 'home':
         return <HomeView />
       case 'tasks':
@@ -45,7 +48,7 @@ export default function HomePage() {
       case 'people':
         return <PeopleView />
       default:
-        return <KanbanBoard onTabChange={setActiveTab} />
+        return <PopView />
     }
   }
 

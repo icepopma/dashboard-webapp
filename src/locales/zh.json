@@ -15,6 +15,7 @@
     "edit": "编辑"
   },
   "nav": {
+    "pop": "Pop",
     "home": "首页",
     "tasks": "任务",
     "content": "内容",
@@ -45,7 +46,13 @@
     "trackProgressDesc": "监控完成情况并保持组织",
     "manageTeam": "管理团队",
     "manageTeamDesc": "组织 agents 及其职责",
-    "recentActivity": "最近活动"
+    "recentActivity": "最近活动",
+    "todayFocus": "今日聚焦",
+    "pending": "待处理",
+    "teamOnline": "团队在线",
+    "popSuggestions": "Pop 建议",
+    "weeklyGoals": "本周目标",
+    "recentProjects": "最近项目"
   },
   "tasks": {
     "title": "任务",
@@ -58,7 +65,15 @@
     "recurring": "循环任务",
     "backlog": "待办",
     "review": "审核中",
-    "done": "已完成"
+    "done": "已完成",
+    "paused": "暂停",
+    "blocked": "阻塞",
+    "viewKanban": "看板",
+    "viewList": "列表",
+    "viewGantt": "甘特图",
+    "viewDependency": "依赖图",
+    "ganttComingSoon": "甘特图视图开发中",
+    "dependencyComingSoon": "依赖图视图开发中"
   },
   "content": {
     "title": "内容流水线",
@@ -100,7 +115,10 @@
     "selectMemory": "选择一个记忆",
     "selectFromSidebar": "从侧边栏选择查看",
     "words": "字",
-    "modified": "最近修改"
+    "modified": "最近修改",
+    "aiMemory": "AI 记忆",
+    "knowledge": "知识库",
+    "graph": "图谱"
   },
   "team": {
     "title": "认识团队",

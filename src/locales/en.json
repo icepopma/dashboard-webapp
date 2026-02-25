@@ -15,6 +15,7 @@
     "edit": "Edit"
   },
   "nav": {
+    "pop": "Pop",
     "home": "Home",
     "tasks": "Tasks",
     "content": "Content",
@@ -45,7 +46,13 @@
     "trackProgressDesc": "Monitor completion and stay organized",
     "manageTeam": "Manage Team",
     "manageTeamDesc": "Organize agents and their responsibilities",
-    "recentActivity": "Recent Activity"
+    "recentActivity": "Recent Activity",
+    "todayFocus": "Today's Focus",
+    "pending": "Pending",
+    "teamOnline": "Team Online",
+    "popSuggestions": "Pop's Suggestions",
+    "weeklyGoals": "Weekly Goals",
+    "recentProjects": "Recent Projects"
   },
   "tasks": {
     "title": "Tasks",
@@ -58,7 +65,15 @@
     "recurring": "Recurring",
     "backlog": "Backlog",
     "review": "Review",
-    "done": "Done"
+    "done": "Done",
+    "paused": "Paused",
+    "blocked": "Blocked",
+    "viewKanban": "Kanban",
+    "viewList": "List",
+    "viewGantt": "Gantt",
+    "viewDependency": "Dependency",
+    "ganttComingSoon": "Gantt view coming soon",
+    "dependencyComingSoon": "Dependency view coming soon"
   },
   "content": {
     "title": "Content Pipeline",
@@ -100,7 +115,10 @@
     "selectMemory": "Select a memory",
     "selectFromSidebar": "Choose from the sidebar to view",
     "words": "words",
-    "modified": "Modified recently"
+    "modified": "Modified recently",
+    "aiMemory": "AI Memory",
+    "knowledge": "Knowledge",
+    "graph": "Graph"
   },
   "team": {
     "title": "Meet the Team",
