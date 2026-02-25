@@ -238,10 +238,11 @@ export function PopView() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {data?.agents.map((agent) => (
+                {data?.agents.map((agent, index) => (
                   <div 
                     key={agent.type}
-                    className="p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer border border-border/50"
+                    className="p-4 rounded-lg bg-muted/30 hover:bg-muted/50 hover-lift cursor-pointer border border-border/50 animate-fade-in-up"
+                    style={{ animationDelay: `${index * 0.05}s` }}
                   >
                     <div className="flex items-start gap-3">
                       <div className="relative">
