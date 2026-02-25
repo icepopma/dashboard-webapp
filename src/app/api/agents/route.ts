@@ -2,61 +2,70 @@
 // Agent State API - 智能体状态 API
 // ─────────────────────────────────────────────────────────────────
 
-import { NextResponse } from 'next/server'
+import { apiHandler, parseJsonBody } from '@/lib/api-handler'
+import { AppError, validators } from '@/lib/errors'
 import { getAgentStates, agentStateStore, AGENT_CONFIGS } from '@/lib/agent-state'
 import type { AgentType } from '@/orchestrator/types'
 
-export async function GET() {
-  try {
-    const states = await getAgentStates()
-    const sessions = agentStateStore.getActiveSessions()
-    const popTasks = agentStateStore.getPopTasks()
-    
-    return NextResponse.json({
-      agents: states.map(state => ({
-        ...state,
-        config: AGENT_CONFIGS[state.type],
-      })),
-      activeSessions: sessions,
-      popTasks,
-      timestamp: new Date().toISOString(),
-    })
-  } catch (error) {
-    console.error('Failed to get agent states:', error)
-    return NextResponse.json(
-      { error: 'Failed to get agent states' },
-      { status: 500 }
-    )
+/**
+ * GET /api/agents - 获取所有智能体状态
+ */
+export const GET = apiHandler(async () => {
+  const states = await getAgentStates()
+  const sessions = agentStateStore.getActiveSessions()
+  const popTasks = agentStateStore.getPopTasks()
+  
+  return {
+    agents: states.map(state => ({
+      ...state,
+      config: AGENT_CONFIGS[state.type],
+    })),
+    activeSessions: sessions,
+    popTasks,
+    timestamp: new Date().toISOString(),
   }
-}
+})
 
-// 更新智能体状态（用于测试或手动更新）
-export async function POST(request: Request) {
-  try {
-    const body = await request.json()
-    const { agentType, updates } = body as { 
-      agentType: AgentType
-      updates: { status?: 'working' | 'idle' | 'offline' | 'error'; currentTask?: string }
+/**
+ * POST /api/agents - 更新智能体状态
+ */
+export const POST = apiHandler(async (request) => {
+  const body = await parseJsonBody<{
+    agentType: AgentType
+    updates: {
+      status?: 'working' | 'idle' | 'offline' | 'error'
+      currentTask?: string
     }
-    
-    if (!agentType || !AGENT_CONFIGS[agentType]) {
-      return NextResponse.json(
-        { error: 'Invalid agent type' },
-        { status: 400 }
-      )
-    }
-    
-    agentStateStore.updateState(agentType, updates)
-    
-    return NextResponse.json({ 
-      success: true,
-      state: agentStateStore.getState(agentType)
+  }>(request)
+
+  // 验证
+  if (!body.agentType) {
+    throw AppError.badRequest('缺少智能体类型')
+  }
+
+  if (!AGENT_CONFIGS[body.agentType]) {
+    throw AppError.badRequest('无效的智能体类型', {
+      validTypes: Object.keys(AGENT_CONFIGS),
     })
-  } catch (error) {
-    console.error('Failed to update agent state:', error)
-    return NextResponse.json(
-      { error: 'Failed to update agent state' },
-      { status: 500 }
+  }
+
+  if (!body.updates || Object.keys(body.updates).length === 0) {
+    throw AppError.badRequest('缺少更新内容')
+  }
+
+  if (body.updates.status) {
+    validators.enum(
+      body.updates.status,
+      ['working', 'idle', 'offline', 'error'],
+      '智能体状态'
     )
   }
-}
+
+  // 更新状态
+  agentStateStore.updateState(body.agentType, body.updates)
+  
+  return {
+    success: true,
+    state: agentStateStore.getState(body.agentType),
+  }
+})

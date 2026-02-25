@@ -215,3 +215,52 @@ export async function createTask(task: Omit<Task, 'id' | 'created_at' | 'updated
   if (error) throw error
   return data
 }
+
+// Additional helper functions
+export async function getIdeaById(id: string) {
+  if (!supabase) return null
+  const { data, error } = await supabase.from('ideas').select('*').eq('id', id).single()
+  if (error) throw error
+  return data
+}
+
+export async function createIdea(idea: Record<string, any>) {
+  if (!supabase) return null
+  const { data, error } = await supabase.from('ideas').insert(idea).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function updateIdea(id: string, updates: Record<string, any>) {
+  if (!supabase) return null
+  const { data, error } = await supabase
+    .from('ideas')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteIdea(id: string) {
+  if (!supabase) return
+  const { error } = await supabase.from('ideas').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteTask(id: string) {
+  if (!supabase) return
+  const { error } = await supabase.from('tasks').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function getTaskById(id: string) {
+  if (!supabase) return null
+  const { data, error } = await supabase.from('tasks').select('*').eq('id', id).single()
+  if (error) throw error
+  return data
+}
+
+// Re-export from supabase.ts for other tables
+export * from './supabase'

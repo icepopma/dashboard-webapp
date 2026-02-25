@@ -10,7 +10,7 @@ type HandlerFunction<T = any> = (
   context?: any
 ) => Promise<T>
 
-type RouteHandlerContext = { params: Record<string, string> }
+type RouteHandlerContext = { params: Promise<Record<string, string>> }
 
 /**
  * API 路由包装器 - 自动处理错误、日志、CORS
@@ -101,14 +101,21 @@ export function getQueryParams(request: NextRequest) {
 /**
  * 获取路由参数
  */
-export function getRouteParam(
+export async function getRouteParam(
   context: RouteHandlerContext | undefined,
   key: string
-): string {
-  if (!context?.params?.[key]) {
+): Promise<string> {
+  if (!context?.params) {
     throw AppError.badRequest(`缺少路由参数: ${key}`)
   }
-  return context.params[key]
+  
+  const params = await context.params
+  
+  if (!params[key]) {
+    throw AppError.badRequest(`缺少路由参数: ${key}`)
+  }
+  
+  return params[key]
 }
 
 /**
