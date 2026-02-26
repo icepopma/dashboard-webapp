@@ -418,6 +418,21 @@ Include screenshots if UI changes are made.`
   }
 
   /**
+   * 重启指定会话（公开方法）
+   */
+  async restart(sessionId: string): Promise<AgentSession | null> {
+    await this.restartSession(sessionId)
+    // 返回新会话（如果有）
+    const sessions = this.getAllSessions()
+    // 查找该 agent 最新的会话
+    const oldSession = this.sessions.get(sessionId)
+    if (oldSession) {
+      return sessions.find(s => s.agent === oldSession.agent && s.status === 'running') || null
+    }
+    return null
+  }
+
+  /**
    * 清理已完成/失败的会话
    */
   cleanupOldSessions(maxAge: number = 24 * 60 * 60 * 1000): number {
