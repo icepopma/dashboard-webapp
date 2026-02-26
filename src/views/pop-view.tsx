@@ -627,7 +627,7 @@ export function PopView() {
         </div>
 
         {/* Right - Activity Log & Tasks */}
-        <div className="w-80 flex-shrink-0 flex flex-col gap-4">
+        <div className="w-80 flex-shrink-0 flex flex-col gap-4 overflow-y-auto pr-2 max-h-[calc(100vh-180px)]">
           {/* Active Dispatch */}
           <Card className="border-border/60 shadow-sm">
             <CardHeader className="pb-2">
