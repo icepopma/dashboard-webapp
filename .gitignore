@@ -43,3 +43,5 @@ next-env.d.ts
 # backup directories
 **/backup/
 *-backup/
+test-results/
+playwright-report/
