@@ -36,6 +36,7 @@ export const PUT = apiHandler(async (request, context) => {
     priority?: 'low' | 'medium' | 'high'
     assignee?: string
     due_date?: string
+    tags?: string[]
   }>(request)
 
   const updates: Record<string, any> = {}
@@ -69,6 +70,10 @@ export const PUT = apiHandler(async (request, context) => {
 
   if (body.due_date !== undefined) {
     updates.due_date = body.due_date || null
+  }
+
+  if (body.tags !== undefined) {
+    updates.tags = Array.isArray(body.tags) ? body.tags : []
   }
 
   if (Object.keys(updates).length === 0) {

@@ -23,7 +23,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import {
   Loader2, Calendar, User, Clock, Trash2,
-  CheckCircle2, Play, Ban, Circle, AlertTriangle, Plus, ListTodo, X as XIcon, History, MessageSquare, Send
+  CheckCircle2, Play, Ban, Circle, AlertTriangle, Plus, ListTodo, X as XIcon, History, MessageSquare, Send, Tag
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -35,6 +35,7 @@ interface Task {
   priority: 'low' | 'medium' | 'high'
   assignee?: string
   due_date?: string
+  tags?: string[]
   created_at: string
   updated_at: string
 }
@@ -68,6 +69,12 @@ interface TaskComment {
   author?: string
   mentions: string[]
   created_at: string
+}
+
+interface Tag {
+  id: string
+  name: string
+  color: string
 }
 
 interface TaskDetailDialogProps {
@@ -116,6 +123,10 @@ export function TaskDetailDialog({
   const [comments, setComments] = useState<TaskComment[]>([])
   const [newComment, setNewComment] = useState('')
   const [commentLoading, setCommentLoading] = useState(false)
+  const [availableTags, setAvailableTags] = useState<Tag[]>([])
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [newTagName, setNewTagName] = useState('')
+  const [tagLoading, setTagLoading] = useState(false)
 
   // 当任务改变时更新表单
   useEffect(() => {
@@ -131,9 +142,22 @@ export function TaskDetailDialog({
       fetchSubtasks()
       fetchLogs()
       fetchComments()
+      fetchTags()
+      setSelectedTags(task.tags || [])
     }
     setDeleteConfirm(false)
   }, [task])
+
+  // 获取可用标签
+  const fetchTags = async () => {
+    try {
+      const res = await fetch('/api/tags')
+      const data = await res.json()
+      setAvailableTags(data.tags || [])
+    } catch (err) {
+      console.error('Failed to fetch tags:', err)
+    }
+  }
 
   // 获取子任务
   const fetchSubtasks = async () => {
@@ -190,6 +214,47 @@ export function TaskDetailDialog({
       console.error('Failed to add comment:', err)
     } finally {
       setCommentLoading(false)
+    }
+  }
+
+  // 切换标签
+  const toggleTag = async (tagName: string) => {
+    if (!task) return
+    const newTags = selectedTags.includes(tagName)
+      ? selectedTags.filter(t => t !== tagName)
+      : [...selectedTags, tagName]
+    setSelectedTags(newTags)
+    
+    // 更新任务
+    try {
+      await fetch(`/api/tasks/${task.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tags: newTags }),
+      })
+    } catch (err) {
+      console.error('Failed to update tags:', err)
+    }
+  }
+
+  // 创建新标签
+  const handleCreateTag = async () => {
+    if (!newTagName.trim()) return
+    setTagLoading(true)
+    try {
+      const res = await fetch('/api/tags', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newTagName }),
+      })
+      if (res.ok) {
+        setNewTagName('')
+        fetchTags()
+      }
+    } catch (err) {
+      console.error('Failed to create tag:', err)
+    } finally {
+      setTagLoading(false)
     }
   }
 
@@ -464,6 +529,64 @@ export function TaskDetailDialog({
             </div>
             <div className="flex items-center gap-1">
               更新: {formatDate(task.updated_at)}
+            </div>
+          </div>
+
+          {/* 标签 */}
+          <div className="space-y-3 pt-2 border-t">
+            <div className="flex items-center gap-2">
+              <Tag className="h-4 w-4 text-indigo-500" />
+              <Label className="text-sm font-medium">标签</Label>
+            </div>
+
+            {/* 已选标签 */}
+            <div className="flex flex-wrap gap-2">
+              {selectedTags.map((tagName) => {
+                const tag = availableTags.find(t => t.name === tagName)
+                return (
+                  <Badge
+                    key={tagName}
+                    className="cursor-pointer hover:opacity-70 transition-opacity"
+                    style={{ backgroundColor: tag?.color || '#6366f1', color: 'white' }}
+                    onClick={() => toggleTag(tagName)}
+                  >
+                    {tagName}
+                    <XIcon className="h-3 w-3 ml-1" />
+                  </Badge>
+                )
+              })}
+              {selectedTags.length === 0 && (
+                <span className="text-xs text-muted-foreground">未选择标签</span>
+              )}
+            </div>
+
+            {/* 可用标签 */}
+            <div className="flex flex-wrap gap-2">
+              {availableTags.filter(t => !selectedTags.includes(t.name)).map((tag) => (
+                <Badge
+                  key={tag.id}
+                  variant="outline"
+                  className="cursor-pointer hover:bg-muted transition-colors"
+                  style={{ borderColor: tag.color, color: tag.color }}
+                  onClick={() => toggleTag(tag.name)}
+                >
+                  + {tag.name}
+                </Badge>
+              ))}
+            </div>
+
+            {/* 创建新标签 */}
+            <div className="flex gap-2">
+              <Input
+                placeholder="创建新标签..."
+                value={newTagName}
+                onChange={(e) => setNewTagName(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleCreateTag()}
+                className="flex-1 h-8 text-sm"
+              />
+              <Button size="sm" onClick={handleCreateTag} disabled={!newTagName.trim() || tagLoading}>
+                {tagLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+              </Button>
             </div>
           </div>
 
