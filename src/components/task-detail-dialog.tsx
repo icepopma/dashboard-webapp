@@ -21,9 +21,9 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import { 
-  Loader2, Calendar, User, Clock, Trash2, 
-  CheckCircle2, Play, Ban, Circle, AlertTriangle
+import {
+  Loader2, Calendar, User, Clock, Trash2,
+  CheckCircle2, Play, Ban, Circle, AlertTriangle, Plus, ListTodo, X as XIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -37,6 +37,17 @@ interface Task {
   due_date?: string
   created_at: string
   updated_at: string
+}
+
+interface Subtask {
+  id: string
+  task_id: string
+  title: string
+  status: 'todo' | 'in_progress' | 'done'
+  priority: 'low' | 'medium' | 'high'
+  assignee?: string
+  order_index: number
+  created_at: string
 }
 
 interface TaskDetailDialogProps {
@@ -77,6 +88,9 @@ export function TaskDetailDialog({
     assignee: '',
     due_date: '',
   })
+  const [subtasks, setSubtasks] = useState<Subtask[]>([])
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState('')
+  const [subtaskLoading, setSubtaskLoading] = useState(false)
 
   // 当任务改变时更新表单
   useEffect(() => {
@@ -89,9 +103,66 @@ export function TaskDetailDialog({
         assignee: task.assignee || '',
         due_date: task.due_date ? task.due_date.split('T')[0] : '',
       })
+      fetchSubtasks()
     }
     setDeleteConfirm(false)
   }, [task])
+
+  // 获取子任务
+  const fetchSubtasks = async () => {
+    if (!task) return
+    try {
+      const res = await fetch(`/api/tasks/${task.id}/subtasks`)
+      const data = await res.json()
+      setSubtasks(data.subtasks || [])
+    } catch (err) {
+      console.error('Failed to fetch subtasks:', err)
+    }
+  }
+
+  // 添加子任务
+  const handleAddSubtask = async () => {
+    if (!task || !newSubtaskTitle.trim()) return
+    setSubtaskLoading(true)
+    try {
+      await fetch(`/api/tasks/${task.id}/subtasks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: newSubtaskTitle }),
+      })
+      setNewSubtaskTitle('')
+      fetchSubtasks()
+    } catch (err) {
+      console.error('Failed to add subtask:', err)
+    } finally {
+      setSubtaskLoading(false)
+    }
+  }
+
+  // 切换子任务状态
+  const handleToggleSubtask = async (subtaskId: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'done' ? 'todo' : 'done'
+    try {
+      await fetch(`/api/subtasks/${subtaskId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      })
+      fetchSubtasks()
+    } catch (err) {
+      console.error('Failed to toggle subtask:', err)
+    }
+  }
+
+  // 删除子任务
+  const handleDeleteSubtask = async (subtaskId: string) => {
+    try {
+      await fetch(`/api/subtasks/${subtaskId}`, { method: 'DELETE' })
+      fetchSubtasks()
+    } catch (err) {
+      console.error('Failed to delete subtask:', err)
+    }
+  }
 
   const handleSubmit = async () => {
     if (!task || !formData.title.trim()) return
@@ -320,6 +391,69 @@ export function TaskDetailDialog({
             </div>
             <div className="flex items-center gap-1">
               更新: {formatDate(task.updated_at)}
+            </div>
+          </div>
+
+          {/* 子任务 */}
+          <div className="space-y-3 pt-2 border-t">
+            <div className="flex items-center gap-2">
+              <ListTodo className="h-4 w-4 text-purple-500" />
+              <Label className="text-sm font-medium">子任务</Label>
+              <Badge variant="outline" className="text-[10px]">
+                {subtasks.filter(s => s.status === 'done').length}/{subtasks.length}
+              </Badge>
+            </div>
+
+            {/* 添加子任务 */}
+            <div className="flex gap-2">
+              <Input
+                placeholder="添加子任务..."
+                value={newSubtaskTitle}
+                onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleAddSubtask()}
+                className="flex-1"
+              />
+              <Button size="sm" onClick={handleAddSubtask} disabled={!newSubtaskTitle.trim() || subtaskLoading}>
+                {subtaskLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+              </Button>
+            </div>
+
+            {/* 子任务列表 */}
+            <div className="space-y-2 max-h-48 overflow-auto">
+              {subtasks.map((subtask) => (
+                <div 
+                  key={subtask.id}
+                  className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                >
+                  <button
+                    onClick={() => handleToggleSubtask(subtask.id, subtask.status)}
+                    className="flex-shrink-0"
+                  >
+                    {subtask.status === 'done' ? (
+                      <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <Circle className="h-4 w-4 text-gray-400 hover:text-gray-500" />
+                    )}
+                  </button>
+                  <span className={cn(
+                    "flex-1 text-sm",
+                    subtask.status === 'done' && "line-through text-muted-foreground"
+                  )}>
+                    {subtask.title}
+                  </span>
+                  <button
+                    onClick={() => handleDeleteSubtask(subtask.id)}
+                    className="opacity-0 hover:opacity-100 transition-opacity"
+                  >
+                    <XIcon className="h-3 w-3 text-red-500" />
+                  </button>
+                </div>
+              ))}
+              {subtasks.length === 0 && (
+                <div className="text-center py-4 text-sm text-muted-foreground">
+                  暂无子任务
+                </div>
+              )}
             </div>
           </div>
         </div>

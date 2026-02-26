@@ -262,5 +262,66 @@ export async function getTaskById(id: string) {
   return data
 }
 
+// ─────────────────────────────────────────────────────────────────
+// Subtask Functions
+// ─────────────────────────────────────────────────────────────────
+
+export interface Subtask {
+  id: string
+  task_id: string
+  title: string
+  description?: string
+  status: 'todo' | 'in_progress' | 'done'
+  priority: 'low' | 'medium' | 'high'
+  assignee?: string
+  order_index: number
+  completed_at?: string
+  created_at: string
+  updated_at: string
+}
+
+export async function getSubtasks(taskId: string) {
+  if (!supabase) return []
+  const { data, error } = await supabase
+    .from('subtasks')
+    .select('*')
+    .eq('task_id', taskId)
+    .order('order_index', { ascending: true })
+  if (error) throw error
+  return data as Subtask[]
+}
+
+export async function createSubtask(subtask: Omit<Subtask, 'id' | 'created_at' | 'updated_at' | 'completed_at'>) {
+  if (!supabase) throw new Error('Supabase not configured')
+  const { data, error } = await supabase
+    .from('subtasks')
+    .insert(subtask)
+    .select()
+    .single()
+  if (error) throw error
+  return data as Subtask
+}
+
+export async function updateSubtask(subtaskId: string, updates: Partial<Subtask>) {
+  if (!supabase) throw new Error('Supabase not configured')
+  const { data, error } = await supabase
+    .from('subtasks')
+    .update(updates)
+    .eq('id', subtaskId)
+    .select()
+    .single()
+  if (error) throw error
+  return data as Subtask
+}
+
+export async function deleteSubtask(subtaskId: string) {
+  if (!supabase) throw new Error('Supabase not configured')
+  const { error } = await supabase
+    .from('subtasks')
+    .delete()
+    .eq('id', subtaskId)
+  if (error) throw error
+}
+
 // Re-export from supabase.ts for other tables
 export * from './supabase'

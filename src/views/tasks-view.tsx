@@ -8,12 +8,31 @@ import {
   CheckCircle2, Circle, Clock, AlertTriangle, Plus, RotateCcw,
   Filter, LayoutGrid, List, ArrowUpDown, Calendar, User,
   ChevronDown, ChevronRight, Play, Pause, Ban, AlertCircle,
-  Sunrise, UserCircle
+  Sunrise, UserCircle, GripVertical
 } from 'lucide-react'
 import { useI18n } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { CreateProjectTaskDialog } from '@/components/create-project-task-dialog'
 import { TaskDetailDialog } from '@/components/task-detail-dialog'
+import {
+  DndContext,
+  DragOverlay,
+  closestCorners,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragStartEvent,
+  DragEndEvent,
+  DragOverEvent,
+} from '@dnd-kit/core'
+import {
+  useSortable,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 interface Task {
   id: string
@@ -42,6 +61,19 @@ export function TasksView() {
   const [smartFilter, setSmartFilter] = useState<SmartFilter>('all')
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
+  const [activeTask, setActiveTask] = useState<Task | null>(null)
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5, // 需要移动 5px 才开始拖拽，避免误触
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
 
   const fetchTasks = async () => {
     try {
@@ -233,6 +265,108 @@ export function TasksView() {
     setDetailOpen(true)
   }
 
+  // DnD handlers
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event
+    const task = tasks.find(t => t.id === active.id)
+    if (task) {
+      setActiveTask(task)
+    }
+  }
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    setActiveTask(null)
+
+    if (!over) return
+
+    const taskId = active.id as string
+    const newStatus = over.id as string
+
+    // 如果拖到另一个列（状态）
+    if (['todo', 'in_progress', 'done', 'blocked'].includes(newStatus)) {
+      const currentTask = tasks.find(t => t.id === taskId)
+      if (currentTask && currentTask.status !== newStatus) {
+        updateTaskStatus(taskId, newStatus)
+      }
+    }
+  }
+
+  // 可拖拽的任务卡片
+  const DraggableTaskCard = ({ task, statusConfig }: { task: Task; statusConfig: ReturnType<typeof getStatusConfig> }) => {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({ id: task.id })
+
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.5 : 1,
+    }
+
+    const priorityConfig = getPriorityConfig(task.priority)
+
+    return (
+      <Card 
+        ref={setNodeRef}
+        style={style}
+        className={cn(
+          "border-border/40 shadow-sm hover:shadow-md transition-all cursor-pointer group",
+          statusConfig.border,
+          isDragging && "shadow-lg ring-2 ring-primary/50"
+        )}
+      >
+        <CardContent className="p-3">
+          <div className="flex items-start gap-2">
+            <button 
+              className="opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing mt-0.5"
+              {...attributes}
+              {...listeners}
+            >
+              <GripVertical className="h-4 w-4 text-muted-foreground" />
+            </button>
+            <div className="flex-1" onClick={() => handleTaskClick(task)}>
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <h4 className="text-sm font-medium leading-tight flex-1">
+                  {task.title}
+                </h4>
+                <Badge className={cn("text-[10px] px-1.5", priorityConfig.bg, priorityConfig.color)}>
+                  {priorityConfig.label}
+                </Badge>
+              </div>
+              
+              {task.description && (
+                <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
+                  {task.description}
+                </p>
+              )}
+              
+              <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                {task.due_date && (
+                  <span className="flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    {formatDate(task.due_date)}
+                  </span>
+                )}
+                {task.assignee && (
+                  <span className="flex items-center gap-1">
+                    <User className="h-3 w-3" />
+                    {task.assignee}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -243,85 +377,88 @@ export function TasksView() {
 
   // 看板视图
   const KanbanView = () => (
-    <div className="grid grid-cols-4 gap-4 h-full">
-      {(['todo', 'in_progress', 'done', 'blocked'] as const).map(status => {
-        const config = getStatusConfig(status)
-        const columnTasks = tasksByStatus[status]
-        const StatusIcon = config.icon
-        
-        return (
-          <div key={status} className="flex flex-col">
-            {/* 列标题 */}
-            <div className={cn(
-              "flex items-center gap-2 px-3 py-2 rounded-t-lg",
-              config.bg
-            )}>
-              <StatusIcon className={cn("h-4 w-4", config.color)} />
-              <span className="font-medium text-sm">{config.label}</span>
-              <span className="text-xs text-muted-foreground ml-auto">
-                {columnTasks.length}
-              </span>
-            </div>
-            
-            {/* 任务卡片 */}
-            <div className="flex-1 overflow-auto space-y-2 p-2 bg-muted/30 rounded-b-lg">
-              {columnTasks.map(task => {
-                const priorityConfig = getPriorityConfig(task.priority)
-                
-                return (
-                  <Card 
-                    key={task.id} 
-                    className={cn(
-                      "border-border/40 shadow-sm hover:shadow-md transition-all cursor-pointer",
-                      config.border
-                    )}
-                    onClick={() => handleTaskClick(task)}
-                  >
-                    <CardContent className="p-3">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <h4 className="text-sm font-medium leading-tight flex-1">
-                          {task.title}
-                        </h4>
-                        <Badge className={cn("text-[10px] px-1.5", priorityConfig.bg, priorityConfig.color)}>
-                          {priorityConfig.label}
-                        </Badge>
-                      </div>
-                      
-                      {task.description && (
-                        <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
-                          {task.description}
-                        </p>
-                      )}
-                      
-                      <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-                        {task.due_date && (
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {formatDate(task.due_date)}
-                          </span>
-                        )}
-                        {task.assignee && (
-                          <span className="flex items-center gap-1">
-                            <User className="h-3 w-3" />
-                            {task.assignee}
-                          </span>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCorners}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="grid grid-cols-4 gap-4 h-full">
+        {(['todo', 'in_progress', 'done', 'blocked'] as const).map(status => {
+          const config = getStatusConfig(status)
+          const columnTasks = tasksByStatus[status]
+          const StatusIcon = config.icon
+          
+          return (
+            <div key={status} className="flex flex-col">
+              {/* 列标题 */}
+              <div className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-t-lg",
+                config.bg
+              )}>
+                <StatusIcon className={cn("h-4 w-4", config.color)} />
+                <span className="font-medium text-sm">{config.label}</span>
+                <span className="text-xs text-muted-foreground ml-auto">
+                  {columnTasks.length}
+                </span>
+              </div>
               
-              {columnTasks.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground text-xs">
-                  暂无任务
-                </div>
-              )}
+              {/* 任务卡片 - Droppable 区域 */}
+              <div 
+                id={status}
+                className="flex-1 overflow-auto space-y-2 p-2 bg-muted/30 rounded-b-lg min-h-[200px]"
+              >
+                <SortableContext 
+                  items={columnTasks.map(t => t.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {columnTasks.map(task => (
+                    <DraggableTaskCard 
+                      key={task.id} 
+                      task={task} 
+                      statusConfig={config}
+                    />
+                  ))}
+                </SortableContext>
+                
+                {columnTasks.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground text-xs">
+                    暂无任务
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )
-      })}
-    </div>
+          )
+        })}
+      </div>
+      
+      {/* Drag Overlay - 拖拽时显示的预览 */}
+      <DragOverlay>
+        {activeTask ? (
+          <Card className="shadow-xl ring-2 ring-primary/50 border-border/40">
+            <CardContent className="p-3">
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <h4 className="text-sm font-medium leading-tight flex-1">
+                  {activeTask.title}
+                </h4>
+                <Badge className={cn(
+                  "text-[10px] px-1.5", 
+                  getPriorityConfig(activeTask.priority).bg, 
+                  getPriorityConfig(activeTask.priority).color
+                )}>
+                  {getPriorityConfig(activeTask.priority).label}
+                </Badge>
+              </div>
+              {activeTask.description && (
+                <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
+                  {activeTask.description}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   )
 
   // 列表视图
