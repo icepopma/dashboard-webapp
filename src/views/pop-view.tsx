@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { 
   Bot, Activity, Clock, CheckCircle2, AlertCircle, Zap, 
   TrendingUp, Users, MessageSquare, Play, Pause, RotateCcw, ListTodo,
-  ArrowDown, Sparkles, Radio, Eye
+  ArrowDown, Sparkles, Radio, Eye, AlertTriangle, Siren
 } from 'lucide-react'
 import type { AgentType, Task } from '@/orchestrator/types'
 import { CreateTaskDialog } from '@/components/create-task-dialog'
@@ -102,6 +102,54 @@ export function PopView() {
     title: string;
     startTime: number;
   }>>(new Map())
+  
+  // 紧急模式状态
+  const [emergencyMode, setEmergencyMode] = useState(false)
+  const [emergencyLoading, setEmergencyLoading] = useState(false)
+  
+  // 切换紧急模式
+  const toggleEmergencyMode = async () => {
+    setEmergencyLoading(true)
+    try {
+      if (!emergencyMode) {
+        // 激活紧急模式：暂停所有工作中的智能体
+        const agents = Array.isArray(data?.agents) ? data.agents : []
+        const workingAgents = agents.filter((a: AgentState) => a.status === 'working' && a.type !== 'pop')
+        
+        await Promise.all(
+          workingAgents.map((a: AgentState) => 
+            fetch(`/api/agents/${a.type}/pause`, { method: 'POST' }).catch(() => null)
+          )
+        )
+        
+        // 暂停所有运行中的任务
+        setRunningTasks(prev => {
+          const cleared = new Map()
+          return cleared
+        })
+        
+        toast.success('🚨 紧急模式已激活', {
+          description: `已暂停 ${workingAgents.length} 个智能体`
+        })
+      } else {
+        // 解除紧急模式：恢复所有智能体
+        const agents = Array.isArray(data?.agents) ? data.agents : []
+        const idleAgents = agents.filter((a: AgentState) => a.status === 'idle' && a.type !== 'pop')
+        
+        toast.success('✅ 紧急模式已解除', {
+          description: '智能体已恢复正常状态'
+        })
+      }
+      
+      setEmergencyMode(!emergencyMode)
+      fetchAgentStates()
+    } catch (err) {
+      console.error('Failed to toggle emergency mode:', err)
+      toast.error('操作失败')
+    } finally {
+      setEmergencyLoading(false)
+    }
+  }
 
   // 获取智能体状态
   const fetchAgentStates = async () => {
@@ -276,6 +324,30 @@ export function PopView() {
           </p>
         </div>
         <div className="flex gap-2">
+          {/* 紧急模式按钮 */}
+          <Button 
+            variant={emergencyMode ? "destructive" : "outline"}
+            size="sm"
+            onClick={toggleEmergencyMode}
+            disabled={emergencyLoading}
+            className={cn(
+              emergencyMode && "animate-pulse"
+            )}
+          >
+            {emergencyLoading ? (
+              <RotateCcw className="h-4 w-4 animate-spin" />
+            ) : emergencyMode ? (
+              <>
+                <Siren className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">解除紧急</span>
+              </>
+            ) : (
+              <>
+                <AlertTriangle className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">紧急模式</span>
+              </>
+            )}
+          </Button>
           <CreateTaskDialog onTaskCreated={() => {
             fetchTasks()
             fetchAgentStates()
