@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { AgentType } from '@/orchestrator/types'
+import { AgentLogStream } from '@/components/agent-log-stream'
 
 interface AgentConfig {
   name: string
@@ -45,13 +46,6 @@ interface Task {
   agent?: string
 }
 
-interface AgentLog {
-  id: string
-  timestamp: Date
-  type: 'info' | 'success' | 'error' | 'warning'
-  message: string
-}
-
 interface AgentDetailSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -60,7 +54,6 @@ interface AgentDetailSheetProps {
 
 export function AgentDetailSheet({ open, onOpenChange, agent }: AgentDetailSheetProps) {
   const [tasks, setTasks] = useState<Task[]>([])
-  const [logs, setLogs] = useState<AgentLog[]>([])
   const [loading, setLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
 
@@ -84,26 +77,11 @@ export function AgentDetailSheet({ open, onOpenChange, agent }: AgentDetailSheet
         t.agent?.toLowerCase() === agent.type.toLowerCase()
       ).slice(0, 10)
       setTasks(agentTasks)
-
-      // 模拟生成日志（后续替换为真实日志）
-      generateMockLogs()
     } catch (err) {
       console.error('Failed to fetch agent data:', err)
     } finally {
       setLoading(false)
     }
-  }
-
-  // 生成模拟日志
-  const generateMockLogs = () => {
-    const mockLogs: AgentLog[] = [
-      { id: '1', timestamp: new Date(Date.now() - 60000), type: 'info', message: '智能体启动完成' },
-      { id: '2', timestamp: new Date(Date.now() - 55000), type: 'info', message: '等待任务分配...' },
-      { id: '3', timestamp: new Date(Date.now() - 30000), type: 'success', message: '接收到新任务' },
-      { id: '4', timestamp: new Date(Date.now() - 25000), type: 'info', message: '正在分析任务需求' },
-      { id: '5', timestamp: new Date(Date.now() - 10000), type: 'info', message: '执行中...' },
-    ]
-    setLogs(mockLogs)
   }
 
   // 智能体操作
@@ -324,35 +302,21 @@ export function AgentDetailSheet({ open, onOpenChange, agent }: AgentDetailSheet
           </CardContent>
         </Card>
 
-        {/* 终端输出 */}
+        {/* 实时日志流 */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <Terminal className="h-4 w-4 text-orange-500" />
-              终端输出
+              实时日志
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="bg-zinc-900 dark:bg-zinc-950 rounded-lg p-3 font-mono text-xs space-y-1 max-h-48 overflow-auto">
-              {logs.map((log) => (
-                <div key={log.id} className="flex items-start gap-2">
-                  <span className="text-zinc-500 flex-shrink-0">
-                    {log.timestamp.toLocaleTimeString()}
-                  </span>
-                  <span className={cn(
-                    log.type === 'success' && 'text-green-400',
-                    log.type === 'error' && 'text-red-400',
-                    log.type === 'warning' && 'text-yellow-400',
-                    log.type === 'info' && 'text-zinc-300'
-                  )}>
-                    {log.message}
-                  </span>
-                </div>
-              ))}
-              <div className="flex items-center gap-1 text-zinc-400">
-                <span className="animate-pulse">▌</span>
-              </div>
-            </div>
+          <CardContent className="p-0">
+            <AgentLogStream
+              agent={agent.type}
+              maxHeight="300px"
+              showControls={false}
+              autoScroll={true}
+            />
           </CardContent>
         </Card>
       </DialogContent>

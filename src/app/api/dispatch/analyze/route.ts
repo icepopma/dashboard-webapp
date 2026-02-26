@@ -99,17 +99,31 @@ export const POST = apiHandler(async (request) => {
   const confidence = Math.min(95, Math.round(50 + maxScore * 15))
   
   // 生成推荐理由
-  const reasons: Record<AgentType, string> = {
-    pop: 'Pop 可以协调多个智能体完成复杂任务',
-    codex: 'Codex 擅长代码开发和功能实现',
-    claude: 'Claude 适合复杂的代码任务和技术分析',
-    quill: 'Quill 专注于内容创作和文档写作',
-    echo: 'Echo 负责内容分发和社交媒体管理',
-    scout: 'Scout 擅长研究和数据分析',
-    pixel: 'Pixel 专注于 UI/UX 设计和图形创作',
+  const reasons: Record<AgentType, string[]> = {
+    pop: ['Pop 可以协调多个智能体完成复杂任务'],
+    codex: ['Codex 擅长代码开发和功能实现', '专精于 bug 修复和重构', '支持复杂的技术任务'],
+    claude: ['Claude 适合复杂的代码任务和技术分析', '擅长处理多步骤的技术问题', '支持详细的代码审查'],
+    quill: ['Quill 专注于内容创作和文档写作', '擅长博客、文章、文案创作', '支持多种写作风格'],
+    echo: ['Echo 负责内容分发和社交媒体管理', '支持多平台同步发布', '擅长内容分发策略'],
+    scout: ['Scout 擅长研究和数据分析', '精通趋势分析和调研', '支持深度数据挖掘'],
+    pixel: ['Pixel 专注于 UI/UX 设计和图形创作', '擅长界面设计和图标制作', '支持视觉设计优化'],
   }
 
+  // 找出匹配的关键词
+  const matchedKeywords = Object.keys(TASK_KEYWORDS).filter(k => description.includes(k))
+
+  // 生成详细理由
+  const reasonParts: string[] = []
+  if (matchedKeywords.length > 0) {
+    reasonParts.push(`检测到关键词: ${matchedKeywords.slice(0, 3).join('、')}`)
+  }
+  reasonParts.push(...(reasons[bestAgent].slice(0, 2)))
+
   const config = AGENT_CONFIGS[bestAgent]
+
+  // 获取智能体当前状态
+  const { agentStateStore } = await import('@/lib/agent-state')
+  const currentState = agentStateStore.getState(bestAgent)
   
   return {
     recommendation: {
@@ -117,12 +131,14 @@ export const POST = apiHandler(async (request) => {
       name: config.name,
       emoji: config.emoji,
       confidence,
-      reason: reasons[bestAgent],
+      reason: reasonParts.join('。'),
       capabilities: config.capabilities,
+      currentStatus: currentState?.status || 'unknown',
+      isAvailable: currentState?.status !== 'working',
     },
     analysis: {
       description: body.description,
-      matchedKeywords: Object.keys(TASK_KEYWORDS).filter(k => description.includes(k)),
+      matchedKeywords,
       allScores: scores,
     },
   }
