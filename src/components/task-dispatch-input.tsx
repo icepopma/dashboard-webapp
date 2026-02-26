@@ -19,6 +19,12 @@ interface AgentRecommendation {
   reason: string
 }
 
+interface DispatchResult {
+  task: { id: string; title: string; status: string }
+  dispatch: { agent: string; agentName: string; agentEmoji: string; sessionId: string }
+  timestamp: string
+}
+
 interface TaskDispatchInputProps {
   onTaskDispatched?: () => void
 }
@@ -30,6 +36,7 @@ export function TaskDispatchInput({ onTaskDispatched }: TaskDispatchInputProps) 
   const [recommendation, setRecommendation] = useState<AgentRecommendation | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [dispatchResult, setDispatchResult] = useState<DispatchResult | null>(null)
 
   // 分析任务
   const analyzeTask = async () => {
@@ -48,9 +55,11 @@ export function TaskDispatchInput({ onTaskDispatched }: TaskDispatchInputProps) 
       
       if (!response.ok) throw new Error('分析失败')
       
-      const data = await response.json()
-      setRecommendation(data.recommendation)
+      const result = await response.json()
+      // API 返回 { success: true, data: { recommendation: ... } }
+      setRecommendation(result.data?.recommendation || result.recommendation)
     } catch (err) {
+      console.error('Analyze error:', err)
       setError('无法分析任务，请重试')
     } finally {
       setAnalyzing(false)
@@ -74,16 +83,27 @@ export function TaskDispatchInput({ onTaskDispatched }: TaskDispatchInputProps) 
         }),
       })
       
-      if (!response.ok) throw new Error('派发失败')
+      if (!response.ok) {
+        const errData = await response.json()
+        throw new Error(errData.error?.message || '派发失败')
+      }
       
+      const result = await response.json()
+      const data = result.data || result
+      
+      setDispatchResult(data)
       setSuccess(true)
       setInput('')
       setRecommendation(null)
       onTaskDispatched?.()
       
-      // 3秒后隐藏成功提示
-      setTimeout(() => setSuccess(false), 3000)
+      // 5秒后隐藏成功提示
+      setTimeout(() => {
+        setSuccess(false)
+        setDispatchResult(null)
+      }, 5000)
     } catch (err) {
+      console.error('Dispatch error:', err)
       setError('派发任务失败，请重试')
     } finally {
       setLoading(false)
@@ -96,6 +116,7 @@ export function TaskDispatchInput({ onTaskDispatched }: TaskDispatchInputProps) 
     setRecommendation(null)
     setError(null)
     setSuccess(false)
+    setDispatchResult(null)
   }
 
   return (
@@ -178,10 +199,20 @@ export function TaskDispatchInput({ onTaskDispatched }: TaskDispatchInputProps) 
         )}
 
         {/* 成功提示 */}
-        {success && (
-          <div className="mt-2 text-sm text-green-500 flex items-center gap-2">
-            <CheckCircle2 className="h-3 w-3" />
-            任务已派发成功！
+        {success && dispatchResult && (
+          <div className="mt-3 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+            <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+              <CheckCircle2 className="h-4 w-4" />
+              <span className="font-medium">任务已派发！</span>
+            </div>
+            <div className="mt-2 flex items-center gap-2 text-sm">
+              <span className="text-xl">{dispatchResult.dispatch.agentEmoji}</span>
+              <span className="font-medium">{dispatchResult.dispatch.agentName}</span>
+              <ArrowRight className="h-3 w-3 text-muted-foreground" />
+              <span className="text-muted-foreground truncate flex-1">
+                {dispatchResult.task.title}
+              </span>
+            </div>
           </div>
         )}
 
