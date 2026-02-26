@@ -8,7 +8,7 @@ import {
   CheckCircle2, Circle, Clock, AlertTriangle, Plus, RotateCcw,
   Filter, LayoutGrid, List, ArrowUpDown, Calendar, User,
   ChevronDown, ChevronRight, Play, Pause, Ban, AlertCircle,
-  Sunrise, UserCircle, GripVertical
+  Sunrise, UserCircle, GripVertical, CheckSquare, Square, X as XIcon, Trash2
 } from 'lucide-react'
 import { useI18n } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
@@ -62,6 +62,11 @@ export function TasksView() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
   const [activeTask, setActiveTask] = useState<Task | null>(null)
+  
+  // 批量选择状态
+  const [batchMode, setBatchMode] = useState(false)
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set())
+  const [batchLoading, setBatchLoading] = useState(false)
 
   // DnD sensors
   const sensors = useSensors(
@@ -292,6 +297,62 @@ export function TasksView() {
     }
   }
 
+  // 批量选择切换
+  const toggleTaskSelection = (taskId: string) => {
+    setSelectedTaskIds(prev => {
+      const updated = new Set(prev)
+      if (updated.has(taskId)) {
+        updated.delete(taskId)
+      } else {
+        updated.add(taskId)
+      }
+      return updated
+    })
+  }
+
+  // 全选/取消全选
+  const toggleSelectAll = () => {
+    if (selectedTaskIds.size === filteredTasks.length) {
+      setSelectedTaskIds(new Set())
+    } else {
+      setSelectedTaskIds(new Set(filteredTasks.map(t => t.id)))
+    }
+  }
+
+  // 批量操作
+  const handleBatchAction = async (action: 'update_status' | 'update_priority' | 'delete', value?: string) => {
+    if (selectedTaskIds.size === 0) return
+    
+    setBatchLoading(true)
+    try {
+      const response = await fetch('/api/tasks/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          taskIds: Array.from(selectedTaskIds),
+          action,
+          value
+        })
+      })
+
+      if (!response.ok) throw new Error('Batch operation failed')
+
+      const result = await response.json()
+      
+      // 清除选择
+      setSelectedTaskIds(new Set())
+      setBatchMode(false)
+      
+      // 刷新任务列表
+      fetchTasks()
+    } catch (err) {
+      console.error('Batch operation failed:', err)
+      alert('批量操作失败')
+    } finally {
+      setBatchLoading(false)
+    }
+  }
+
   // 可拖拽的任务卡片
   const DraggableTaskCard = ({ task, statusConfig }: { task: Task; statusConfig: ReturnType<typeof getStatusConfig> }) => {
     const {
@@ -310,6 +371,7 @@ export function TasksView() {
     }
 
     const priorityConfig = getPriorityConfig(task.priority)
+    const isSelected = selectedTaskIds.has(task.id)
 
     return (
       <Card 
@@ -318,19 +380,38 @@ export function TasksView() {
         className={cn(
           "border-border/40 shadow-sm hover:shadow-md transition-all cursor-pointer group",
           statusConfig.border,
-          isDragging && "shadow-lg ring-2 ring-primary/50"
+          isDragging && "shadow-lg ring-2 ring-primary/50",
+          isSelected && "ring-2 ring-primary bg-primary/5"
         )}
       >
         <CardContent className="p-3">
           <div className="flex items-start gap-2">
-            <button 
-              className="opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing mt-0.5"
-              {...attributes}
-              {...listeners}
-            >
-              <GripVertical className="h-4 w-4 text-muted-foreground" />
-            </button>
-            <div className="flex-1" onClick={() => handleTaskClick(task)}>
+            {/* 批量选择复选框 */}
+            {batchMode && (
+              <button 
+                className="mt-0.5 flex-shrink-0"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  toggleTaskSelection(task.id)
+                }}
+              >
+                {isSelected ? (
+                  <CheckSquare className="h-4 w-4 text-primary" />
+                ) : (
+                  <Square className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                )}
+              </button>
+            )}
+            {!batchMode && (
+              <button 
+                className="opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing mt-0.5"
+                {...attributes}
+                {...listeners}
+              >
+                <GripVertical className="h-4 w-4 text-muted-foreground" />
+              </button>
+            )}
+            <div className="flex-1" onClick={() => !batchMode && handleTaskClick(task)}>
               <div className="flex items-start justify-between gap-2 mb-2">
                 <h4 className="text-sm font-medium leading-tight flex-1">
                   {task.title}
@@ -624,6 +705,17 @@ export function TasksView() {
         {/* View Mode Toggle */}
         <div className="flex items-center gap-2">
           <Button
+            variant={batchMode ? "default" : "outline"}
+            size="sm"
+            onClick={() => {
+              setBatchMode(!batchMode)
+              setSelectedTaskIds(new Set())
+            }}
+          >
+            <CheckSquare className="h-4 w-4 mr-2" />
+            批量
+          </Button>
+          <Button
             variant={viewMode === 'kanban' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setViewMode('kanban')}
@@ -668,6 +760,77 @@ export function TasksView() {
           </select>
         </div>
       </div>
+
+      {/* Batch Action Bar */}
+      {batchMode && selectedTaskIds.size > 0 && (
+        <div className="px-6 mb-4 flex-shrink-0">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-primary/10 border border-primary/20">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium">
+                已选择 {selectedTaskIds.size} 个任务
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedTaskIds(new Set())}
+              >
+                <XIcon className="h-3 w-3 mr-1" />
+                取消选择
+              </Button>
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                className="text-sm bg-background border border-border rounded px-2 py-1"
+                onChange={(e) => {
+                  if (e.target.value) {
+                    handleBatchAction('update_status', e.target.value)
+                    e.target.value = ''
+                  }
+                }}
+                disabled={batchLoading}
+              >
+                <option value="">改状态...</option>
+                <option value="todo">待办</option>
+                <option value="in_progress">进行中</option>
+                <option value="done">已完成</option>
+                <option value="blocked">阻塞</option>
+              </select>
+              <select
+                className="text-sm bg-background border border-border rounded px-2 py-1"
+                onChange={(e) => {
+                  if (e.target.value) {
+                    handleBatchAction('update_priority', e.target.value)
+                    e.target.value = ''
+                  }
+                }}
+                disabled={batchLoading}
+              >
+                <option value="">改优先级...</option>
+                <option value="high">高</option>
+                <option value="medium">中</option>
+                <option value="low">低</option>
+              </select>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => {
+                  if (confirm(`确定删除 ${selectedTaskIds.size} 个任务？`)) {
+                    handleBatchAction('delete')
+                  }
+                }}
+                disabled={batchLoading}
+              >
+                {batchLoading ? (
+                  <RotateCcw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4 mr-1" />
+                )}
+                删除
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       <div className="flex-1 px-6 pb-6 overflow-auto">
