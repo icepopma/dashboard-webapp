@@ -333,7 +333,7 @@ export function PopView() {
   const totalAgents = agents.length
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="h-full flex flex-col overflow-y-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 px-4 sm:px-6 pt-4 sm:pt-6 flex-shrink-0">
         <div>
@@ -449,9 +449,9 @@ export function PopView() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 px-4 sm:px-6 pb-6 overflow-y-auto flex flex-col lg:flex-row gap-4">
+      <div className="flex-1 px-4 sm:px-6 pb-6 flex flex-col lg:flex-row gap-4">
         {/* Left - Agent Hierarchy */}
-        <div className="flex-1 overflow-auto min-w-0 flex flex-col gap-4">
+        <div className="flex-1 min-w-0 flex flex-col gap-4">
           
           {/* Pop Master Card */}
           <Card className="border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10 shadow-lg">
