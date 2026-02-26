@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { RotateCcw, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react'
+import { RotateCcw, ZoomIn, ZoomOut, Maximize2, Volume2, VolumeX } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { AgentType } from '@/orchestrator/types'
 
