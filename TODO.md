@@ -1,7 +1,7 @@
 # Dashboard Web App 开发任务
 
-**更新时间**: 2026-02-26 18:00 UTC (Cron 自动检查)
-**状态**: Phase 0 已完成，Phase 1 (优化阶段) 进行中
+**更新时间**: 2026-02-26 21:10 UTC (夜间值班自动检查)
+**状态**: Phase 0 已完成，Phase 1 (优化阶段) 大部分完成
 
 ---
 
@@ -22,13 +22,17 @@
 
 ---
 
-## 🚀 Phase 1 - 优化阶段 🔄 进行中
+## 🚀 Phase 1 - 优化阶段 ✅ 大部分完成
 
 | 模块 | 状态 | 说明 |
 |------|------|------|
-| 智能体实际启动 | 🔄 | AgentLauncher 已实现，需与真实智能体连接 |
-| 实时 WebSocket | 🔄 | 当前用 polling，可升级为 WebSocket |
-| 更多 API 端点 | 🔄 | 按需扩展 |
+| 智能体实际启动 | ✅ | AgentLauncher 已实现，支持进程管理、健康检查、自动重启 |
+| 实时 WebSocket | ✅ | SSE 实时同步已实现（use-realtime.ts + /api/realtime） |
+| 更多 API 端点 | ✅ | ideas/tasks/approvals/council/projects/activity/tags/comments/subtasks/dependencies/logs |
+| 任务管理系统 | ✅ | TasksView 看板/列表双视图，筛选排序，拖放状态 |
+| 办公室视图 | ✅ | Pixel Art 办公室 + 声音系统 |
+| 主动扫描器 | ✅ | GitHub Issues、Sentry 错误、会议记录扫描 |
+| 安全更新 | ✅ | 依赖漏洞已修复（npm audit fix） |
 
 ---
 
@@ -98,10 +102,10 @@ src/
 
 ## 下一步计划
 
-1. **连接真实智能体** - 让 AgentLauncher 能启动 Codex/Claude 等真实智能体
-2. **WebSocket 实时同步** - 替代 polling，实现真正的实时更新
-3. **更多 API 端点** - 按需添加 (approvals, council, projects 等)
+1. **连接真实智能体** - 配置 Codex/Claude/Quill/Echo/Scout/Pixel 的实际启动参数
+2. **部署准备** - 配置生产环境、环境变量、CI/CD
+3. **用户测试** - 收集反馈，优化用户体验
 
 ---
 
-*最后更新: 2026-02-25 22:10 UTC*
+*最后更新: 2026-02-26 21:10 UTC (夜间值班)*
