@@ -13,6 +13,7 @@ import {
 import type { AgentType, Task } from '@/orchestrator/types'
 import { CreateTaskDialog } from '@/components/create-task-dialog'
 import { AgentDetailSheet } from '@/components/agent-detail-sheet'
+import { TaskDispatchInput } from '@/components/task-dispatch-input'
 import { cn } from '@/lib/utils'
 
 interface AgentConfig {
@@ -307,6 +308,14 @@ export function PopView() {
             </div>
           )}
 
+          {/* Task Dispatch Input */}
+          <TaskDispatchInput 
+            onTaskDispatched={() => {
+              fetchTasks()
+              fetchAgentStates()
+            }}
+          />
+
           {/* Sub-agents Grid */}
           <Card className="border-border/60 shadow-sm flex-1">
             <CardHeader className="pb-2">
@@ -364,10 +373,37 @@ export function PopView() {
                           </div>
                         )}
                         
-                        {/* 统计 */}
-                        <div className="flex items-center gap-3 mt-2 text-[10px] text-muted-foreground">
-                          <span>会话: {agent.sessionCount}</span>
-                          <span>成功率: {(agent.successRate * 100).toFixed(0)}%</span>
+                        {/* 统计 + 负载指示器 */}
+                        <div className="mt-2 space-y-1.5">
+                          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                            <span>会话: {agent.sessionCount}</span>
+                            <span>成功率: {(agent.successRate * 100).toFixed(0)}%</span>
+                          </div>
+                          {/* 负载均衡指示器 */}
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] text-muted-foreground">负载:</span>
+                            <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                              <div 
+                                className={cn(
+                                  "h-full rounded-full transition-all",
+                                  agent.status === 'working' ? "bg-green-500" : 
+                                  agent.status === 'idle' ? "bg-yellow-500" : 
+                                  agent.status === 'error' ? "bg-red-500" : "bg-gray-400"
+                                )}
+                                style={{ 
+                                  width: agent.status === 'working' ? '75%' : 
+                                         agent.status === 'idle' ? '25%' : '0%' 
+                                }}
+                              />
+                            </div>
+                            <span className={cn(
+                              "text-[10px]",
+                              agent.status === 'working' && "text-green-500",
+                              agent.status === 'idle' && "text-yellow-500",
+                            )}>
+                              {agent.status === 'working' ? '高' : agent.status === 'idle' ? '低' : '-'}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
