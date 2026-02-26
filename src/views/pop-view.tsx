@@ -15,6 +15,7 @@ import { CreateTaskDialog } from '@/components/create-task-dialog'
 import { AgentDetailSheet } from '@/components/agent-detail-sheet'
 import { TaskDispatchInput } from '@/components/task-dispatch-input'
 import { TaskResultDialog, generateMockTaskResult } from '@/components/task-result-dialog'
+import { TaskTimeline, generateMockTimelineEvents } from '@/components/task-timeline'
 import { toast } from '@/components/ui/toaster'
 import { cn } from '@/lib/utils'
 
@@ -106,6 +107,9 @@ export function PopView() {
   // 紧急模式状态
   const [emergencyMode, setEmergencyMode] = useState(false)
   const [emergencyLoading, setEmergencyLoading] = useState(false)
+  
+  // 时间线事件（模拟数据 + 真实派发事件）
+  const [timelineEvents, setTimelineEvents] = useState(() => generateMockTimelineEvents(6))
   
   // 切换紧急模式
   const toggleEmergencyMode = async () => {
@@ -221,11 +225,13 @@ export function PopView() {
     setRunningTasks(prev => {
       const updated = new Map(prev)
       let changed = false
+      const completedTasks: { taskId: string; task: typeof prev extends Map<string, infer T> ? T : never }[] = []
       
       updated.forEach((task, taskId) => {
         // 50% 概率完成任务（每5秒检查一次，平均10秒完成）
         if (Math.random() < 0.5) {
           changed = true
+          completedTasks.push({ taskId, task })
           
           const duration = Math.floor((Date.now() - task.startTime) / 1000)
           const result = generateMockTaskResult(taskId, task.title, task.agent)
@@ -255,6 +261,24 @@ export function PopView() {
           fetch('/api/agents/' + task.agent + '/resume', { method: 'POST' }).catch(() => {})
         }
       })
+      
+      // 更新时间线（将运行中的事件改为完成）
+      if (completedTasks.length > 0) {
+        setTimelineEvents(prev => {
+          const updated = [...prev]
+          completedTasks.forEach(({ taskId, task }) => {
+            const eventIndex = updated.findIndex(e => e.id === taskId)
+            if (eventIndex >= 0) {
+              updated[eventIndex] = {
+                ...updated[eventIndex],
+                status: 'completed',
+                duration: Math.floor((Date.now() - task.startTime) / 1000),
+              }
+            }
+          })
+          return updated
+        })
+      }
       
       return changed ? updated : prev
     })
@@ -486,6 +510,17 @@ export function PopView() {
                   })
                   return updated
                 })
+                
+                // 添加到时间线
+                setTimelineEvents(prev => [{
+                  id: result.task.id,
+                  time: new Date(),
+                  agent: result.dispatch.agent,
+                  agentName: result.dispatch.agentName,
+                  agentEmoji: result.dispatch.agentEmoji,
+                  task: result.task.title,
+                  status: 'running',
+                }, ...prev])
               }
               fetchTasks()
               fetchAgentStates()
@@ -623,6 +658,9 @@ export function PopView() {
               )}
             </CardContent>
           </Card>
+
+          {/* Timeline */}
+          <TaskTimeline events={timelineEvents} />
 
           {/* Active Sessions */}
           <Card className="border-border/60 shadow-sm flex-1">
