@@ -18,6 +18,7 @@ import { PeopleView } from '@/views/people-view'
 import { PopView } from '@/views/pop-view'
 import { useKeyboardShortcut, navShortcuts } from '@/hooks/use-keyboard-shortcut'
 import { KeyboardShortcutsHelp, KeyboardShortcutsButton } from '@/components/keyboard-shortcuts-help'
+import { Toaster } from '@/components/ui/toaster'
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState<NavItemId>('pop')
@@ -98,6 +99,9 @@ export default function HomePage() {
 
       {/* 快捷键帮助弹窗 */}
       <KeyboardShortcutsHelp isOpen={showHelp} onClose={() => setShowHelp(false)} />
+      
+      {/* Toast 通知 */}
+      <Toaster position="top-right" richColors />
     </main>
   )
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useI18n } from '@/lib/i18n'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -8,12 +8,14 @@ import { Button } from '@/components/ui/button'
 import { 
   Bot, Activity, Clock, CheckCircle2, AlertCircle, Zap, 
   TrendingUp, Users, MessageSquare, Play, Pause, RotateCcw, ListTodo,
-  ArrowDown, Sparkles, Radio
+  ArrowDown, Sparkles, Radio, Eye
 } from 'lucide-react'
 import type { AgentType, Task } from '@/orchestrator/types'
 import { CreateTaskDialog } from '@/components/create-task-dialog'
 import { AgentDetailSheet } from '@/components/agent-detail-sheet'
 import { TaskDispatchInput } from '@/components/task-dispatch-input'
+import { TaskResultDialog, generateMockTaskResult } from '@/components/task-result-dialog'
+import { toast } from '@/components/ui/toaster'
 import { cn } from '@/lib/utils'
 
 interface AgentConfig {
@@ -57,6 +59,26 @@ interface DispatchEvent {
   status: 'dispatching' | 'running' | 'completed'
 }
 
+// 任务结果类型
+interface TaskResultData {
+  id: string
+  title: string
+  agent: string
+  agentName: string
+  agentEmoji: string
+  status: 'completed' | 'failed'
+  startedAt: string
+  completedAt: string
+  duration: number
+  output: {
+    type: 'text' | 'markdown' | 'code' | 'file'
+    content: string
+    language?: string
+    files?: { name: string; url: string; size: string }[]
+  }
+  logs: { time: string; message: string; type: 'info' | 'success' | 'error' }[]
+}
+
 export function PopView() {
   const { t } = useI18n()
   const [data, setData] = useState<AgentData | null>(null)
@@ -66,6 +88,12 @@ export function PopView() {
   const [dispatchEvents, setDispatchEvents] = useState<DispatchEvent[]>([])
   const [selectedAgent, setSelectedAgent] = useState<AgentState | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
+  
+  // 任务结果相关状态
+  const [taskResults, setTaskResults] = useState<Map<string, TaskResultData>>(new Map())
+  const [selectedTaskResult, setSelectedTaskResult] = useState<TaskResultData | null>(null)
+  const [resultDialogOpen, setResultDialogOpen] = useState(false)
+  const [pendingCompletions, setPendingCompletions] = useState<Set<string>>(new Set())
 
   // 获取智能体状态
   const fetchAgentStates = async () => {
@@ -114,13 +142,56 @@ export function PopView() {
   useEffect(() => {
     fetchAgentStates()
     fetchTasks()
+    
     // 每 30 秒刷新一次
     const interval = setInterval(() => {
       fetchAgentStates()
       fetchTasks()
     }, 30000)
-    return () => clearInterval(interval)
+    
+    // 模拟任务完成检测（每10秒检查一次）
+    const completionCheck = setInterval(() => {
+      checkTaskCompletions()
+    }, 10000)
+    
+    return () => {
+      clearInterval(interval)
+      clearInterval(completionCheck)
+    }
   }, [])
+  
+  // 检查任务完成（模拟）
+  const checkTaskCompletions = useCallback(() => {
+    const agents = Array.isArray(data?.agents) ? data.agents : []
+    
+    agents.forEach(agent => {
+      if (agent.status === 'working' && agent.currentTask) {
+        // 模拟：30% 概率完成任务
+        if (Math.random() < 0.3) {
+          const taskId = `task-${Date.now()}`
+          const result = generateMockTaskResult(taskId, agent.currentTask, agent.type)
+          
+          // 保存结果
+          setTaskResults(prev => new Map(prev).set(taskId, result))
+          
+          // 显示通知
+          toast.success(`${agent.config?.emoji || '🤖'} ${agent.config?.name || agent.type} 完成了任务`, {
+            description: agent.currentTask,
+            action: {
+              label: '查看结果',
+              onClick: () => {
+                setSelectedTaskResult(result)
+                setResultDialogOpen(true)
+              }
+            }
+          })
+          
+          // 更新智能体状态为空闲
+          fetchAgentStates()
+        }
+      }
+    })
+  }, [data?.agents])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -491,29 +562,59 @@ export function PopView() {
             </CardHeader>
             <CardContent className="overflow-auto h-[calc(100%-60px)]">
               <div className="space-y-2">
-                {tasks.slice(0, 5).map((task) => (
-                  <div key={task.id} className="p-2.5 rounded-lg bg-muted/30 text-sm">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium truncate">{task.title}</div>
-                        <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2">
-                          <span className={cn(
-                            "px-1.5 py-0.5 rounded text-[10px]",
-                            task.status === 'completed' ? 'bg-green-500/20 text-green-500' :
-                            task.status === 'running' ? 'bg-blue-500/20 text-blue-500' :
-                            task.status === 'failed' ? 'bg-red-500/20 text-red-500' :
-                            'bg-gray-500/20 text-gray-500'
-                          )}>
-                            {task.status === 'completed' ? '✓ 完成' :
-                             task.status === 'running' ? '▶ 运行中' :
-                             task.status === 'failed' ? '✗ 失败' : '○ 待处理'}
-                          </span>
-                          {task.agent && <span>→ {task.agent}</span>}
+                {tasks.slice(0, 5).map((task) => {
+                  const hasResult = task.status === 'completed'
+                  const result = taskResults.get(task.id)
+                  
+                  return (
+                    <div key={task.id} className="p-2.5 rounded-lg bg-muted/30 text-sm">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium truncate">{task.title}</div>
+                          <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2">
+                            <span className={cn(
+                              "px-1.5 py-0.5 rounded text-[10px]",
+                              task.status === 'completed' ? 'bg-green-500/20 text-green-500' :
+                              task.status === 'running' ? 'bg-blue-500/20 text-blue-500' :
+                              task.status === 'failed' ? 'bg-red-500/20 text-red-500' :
+                              task.status === 'blocked' ? 'bg-orange-500/20 text-orange-500' :
+                              'bg-gray-500/20 text-gray-500'
+                            )}>
+                              {task.status === 'completed' ? '✓ 完成' :
+                               task.status === 'running' ? '▶ 运行中' :
+                               task.status === 'analyzing' ? '📊 分析中' :
+                               task.status === 'reviewing' ? '👁 审核中' :
+                               task.status === 'failed' ? '✗ 失败' :
+                               task.status === 'blocked' ? '🚫 阻塞' : '○ 待处理'}
+                            </span>
+                            {task.agent && <span>→ {task.agent}</span>}
+                          </div>
                         </div>
+                        {/* 查看结果按钮 */}
+                        {(hasResult || result) && (
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            className="h-6 px-2 text-[10px]"
+                            onClick={() => {
+                              // 使用已有结果或生成模拟结果
+                              const taskResult = result || generateMockTaskResult(
+                                task.id, 
+                                task.title, 
+                                task.agent || 'codex'
+                              )
+                              setSelectedTaskResult(taskResult)
+                              setResultDialogOpen(true)
+                            }}
+                          >
+                            <Eye className="h-3 w-3 mr-1" />
+                            结果
+                          </Button>
+                        )}
                       </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
                 {tasks.length === 0 && (
                   <div className="text-sm text-muted-foreground text-center py-8">
                     暂无任务
@@ -537,6 +638,13 @@ export function PopView() {
         open={detailOpen} 
         onOpenChange={setDetailOpen} 
         agent={selectedAgent} 
+      />
+      
+      {/* Task Result Dialog */}
+      <TaskResultDialog
+        open={resultDialogOpen}
+        onOpenChange={setResultDialogOpen}
+        task={selectedTaskResult}
       />
     </div>
   )
