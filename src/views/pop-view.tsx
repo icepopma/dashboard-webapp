@@ -662,6 +662,18 @@ export function PopView() {
 
           {/* Timeline */}
           <TaskTimeline events={timelineEvents} />
+          
+          {/* Collaboration Graph */}
+          <CollaborationGraph 
+            agents={subAgents.map((a: AgentState) => ({
+              type: a.type,
+              name: a.config?.name || a.type,
+              emoji: a.config?.emoji || '🤖',
+              status: a.status,
+              currentTask: a.currentTask,
+            }))}
+            runningTasks={runningTasks}
+          />
 
           {/* Active Sessions */}
           <Card className="border-border/60 shadow-sm flex-1">
