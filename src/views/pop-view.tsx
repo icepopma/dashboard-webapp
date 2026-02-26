@@ -449,7 +449,7 @@ export function PopView() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 px-4 sm:px-6 pb-6 overflow-hidden flex flex-col lg:flex-row gap-4">
+      <div className="flex-1 px-4 sm:px-6 pb-6 overflow-y-auto flex flex-col lg:flex-row gap-4">
         {/* Left - Agent Hierarchy */}
         <div className="flex-1 overflow-auto min-w-0 flex flex-col gap-4">
           
@@ -627,7 +627,7 @@ export function PopView() {
         </div>
 
         {/* Right - Activity Log & Tasks */}
-        <div className="w-80 flex-shrink-0 flex flex-col gap-4 overflow-y-auto pr-2 max-h-[calc(100vh-180px)]">
+        <div className="w-80 flex-shrink-0 flex flex-col gap-4">
           {/* Active Dispatch */}
           <Card className="border-border/60 shadow-sm">
             <CardHeader className="pb-2">
