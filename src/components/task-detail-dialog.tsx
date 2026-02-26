@@ -23,7 +23,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import {
   Loader2, Calendar, User, Clock, Trash2,
-  CheckCircle2, Play, Ban, Circle, AlertTriangle, Plus, ListTodo, X as XIcon
+  CheckCircle2, Play, Ban, Circle, AlertTriangle, Plus, ListTodo, X as XIcon, History
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -47,6 +47,17 @@ interface Subtask {
   priority: 'low' | 'medium' | 'high'
   assignee?: string
   order_index: number
+  created_at: string
+}
+
+interface TaskLog {
+  id: string
+  task_id: string
+  action: string
+  field?: string
+  old_value?: string
+  new_value?: string
+  actor?: string
   created_at: string
 }
 
@@ -91,6 +102,8 @@ export function TaskDetailDialog({
   const [subtasks, setSubtasks] = useState<Subtask[]>([])
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('')
   const [subtaskLoading, setSubtaskLoading] = useState(false)
+  const [logs, setLogs] = useState<TaskLog[]>([])
+  const [logsLoading, setLogsLoading] = useState(false)
 
   // 当任务改变时更新表单
   useEffect(() => {
@@ -104,6 +117,7 @@ export function TaskDetailDialog({
         due_date: task.due_date ? task.due_date.split('T')[0] : '',
       })
       fetchSubtasks()
+      fetchLogs()
     }
     setDeleteConfirm(false)
   }, [task])
@@ -117,6 +131,21 @@ export function TaskDetailDialog({
       setSubtasks(data.subtasks || [])
     } catch (err) {
       console.error('Failed to fetch subtasks:', err)
+    }
+  }
+
+  // 获取操作日志
+  const fetchLogs = async () => {
+    if (!task) return
+    setLogsLoading(true)
+    try {
+      const res = await fetch(`/api/tasks/${task.id}/logs`)
+      const data = await res.json()
+      setLogs(data.logs || [])
+    } catch (err) {
+      console.error('Failed to fetch logs:', err)
+    } finally {
+      setLogsLoading(false)
     }
   }
 
@@ -455,6 +484,61 @@ export function TaskDetailDialog({
                 </div>
               )}
             </div>
+          </div>
+
+          {/* 操作历史 */}
+          <div className="space-y-3 pt-2 border-t">
+            <div className="flex items-center gap-2">
+              <History className="h-4 w-4 text-orange-500" />
+              <Label className="text-sm font-medium">操作历史</Label>
+            </div>
+
+            {logsLoading ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-48 overflow-auto">
+                {logs.map((log) => (
+                  <div 
+                    key={log.id}
+                    className="flex items-start gap-2 p-2 rounded-lg bg-muted/30 text-sm"
+                  >
+                    <Clock className="h-3 w-3 mt-0.5 text-muted-foreground flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">
+                          {log.action === 'created' && '创建任务'}
+                          {log.action === 'status_changed' && '状态变更'}
+                          {log.action === 'priority_changed' && '优先级变更'}
+                          {log.action === 'assignee_changed' && '负责人变更'}
+                          {log.action === 'title_changed' && '标题修改'}
+                        </span>
+                        {log.old_value && log.new_value && (
+                          <span className="text-xs text-muted-foreground">
+                            {log.old_value} → {log.new_value}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        {new Date(log.created_at).toLocaleString('zh-CN', {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                        {log.actor && ` · ${log.actor}`}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {logs.length === 0 && (
+                  <div className="text-center py-4 text-sm text-muted-foreground">
+                    暂无操作记录
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
