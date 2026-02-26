@@ -9,11 +9,16 @@ import { useI18n } from '@/lib/i18n'
 
 interface CalendarTask {
   id: string
-  title: string
+  name: string
+  title: string // alias for display
   type: 'cron' | 'scheduled' | 'oneTime'
-  status: 'pending' | 'running' | 'completed' | 'failed'
+  status: 'pending' | 'running' | 'completed' | 'error'
   scheduledFor: string
+  nextRun: string | null
+  lastRun: string | null
+  schedule: string
   agent?: string
+  target?: string
 }
 
 export function CalendarView() {
@@ -24,48 +29,31 @@ export function CalendarView() {
 
   const fetchTasks = async () => {
     try {
-      // 模拟从 sync API 获取定时任务
-      const res = await fetch('/api/sync')
+      // 从 OpenClaw Cron 获取真实定时任务
+      const res = await fetch('/api/scheduled')
       const data = await res.json()
       
-      // 添加一些模拟的日历任务
-      const calendarTasks: CalendarTask[] = [
-        {
-          id: 'cal-001',
-          title: '每日工作日志',
-          type: 'cron',
-          status: 'pending',
-          scheduledFor: new Date(Date.now() + 3600000).toISOString(),
-          agent: 'Pop',
-        },
-        {
-          id: 'cal-002',
-          title: '开发进度检查',
-          type: 'cron',
-          status: 'pending',
-          scheduledFor: new Date(Date.now() + 7200000).toISOString(),
-          agent: 'Pop',
-        },
-        {
-          id: 'cal-003',
-          title: '内容发布提醒',
-          type: 'scheduled',
-          status: 'pending',
-          scheduledFor: new Date(Date.now() + 86400000).toISOString(),
-          agent: 'Echo',
-        },
-        {
-          id: 'cal-004',
-          title: '周报生成',
-          type: 'cron',
-          status: 'completed',
-          scheduledFor: new Date(Date.now() - 3600000).toISOString(),
-          agent: 'Pop',
-        },
-      ]
-      setTasks(calendarTasks)
+      if (data.tasks && data.tasks.length > 0) {
+        const calendarTasks: CalendarTask[] = data.tasks.map((task: any) => ({
+          id: task.id,
+          name: task.name,
+          title: task.name, // For display
+          type: task.type || 'cron',
+          status: task.status,
+          scheduledFor: task.nextRun || new Date().toISOString(),
+          nextRun: task.nextRun,
+          lastRun: task.lastRun,
+          schedule: task.schedule,
+          agent: task.agent,
+          target: task.target,
+        }))
+        setTasks(calendarTasks)
+      } else {
+        setTasks([])
+      }
     } catch (err) {
       console.error('Failed to fetch calendar tasks:', err)
+      setTasks([])
     } finally {
       setLoading(false)
     }
@@ -87,7 +75,7 @@ export function CalendarView() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed': return <CheckCircle className="h-4 w-4 text-green-500" />
-      case 'failed': return <AlertCircle className="h-4 w-4 text-red-500" />
+      case 'error': return <AlertCircle className="h-4 w-4 text-red-500" />
       case 'running': return <Clock className="h-4 w-4 text-blue-500 animate-spin" />
       default: return <Clock className="h-4 w-4 text-muted-foreground" />
     }
@@ -109,10 +97,10 @@ export function CalendarView() {
     return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
   }
 
-  const upcomingTasks = tasks.filter(t => t.status === 'pending').sort((a, b) => 
+  const upcomingTasks = tasks.filter(t => t.status === 'pending' || t.status === 'running').sort((a, b) => 
     new Date(a.scheduledFor).getTime() - new Date(b.scheduledFor).getTime()
   )
-  const completedTasks = tasks.filter(t => t.status === 'completed' || t.status === 'failed')
+  const completedTasks = tasks.filter(t => t.status === 'completed' || t.status === 'error')
 
   if (loading) {
     return (
@@ -184,6 +172,11 @@ export function CalendarView() {
                             <span>{formatDate(task.scheduledFor)} {formatTime(task.scheduledFor)}</span>
                             {task.agent && <span>• {task.agent}</span>}
                           </div>
+                          {task.schedule && (
+                            <div className="mt-1 text-xs text-muted-foreground/70 font-mono">
+                              ⏰ {task.schedule}
+                            </div>
+                          )}
                         </div>
                         {getTypeBadge(task.type)}
                       </div>

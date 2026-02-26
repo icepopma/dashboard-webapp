@@ -76,9 +76,10 @@ export function HomeView() {
       let totalIdeas = 0
       let withPlan = 0
       if (ideasRes.ok) {
-        const ideas = await ideasRes.json()
-        totalIdeas = ideas?.length || 0
-        withPlan = ideas?.filter((i: any) => i.has_plan).length || 0
+        const data = await ideasRes.json()
+        const ideas = Array.isArray(data?.ideas) ? data.ideas : (Array.isArray(data) ? data : [])
+        totalIdeas = ideas.length
+        withPlan = ideas.filter((i: any) => i.has_plan).length
       }
 
       // 获取 tasks 统计
@@ -86,9 +87,10 @@ export function HomeView() {
       let totalTasks = 0
       let completedTasks = 0
       if (tasksRes.ok) {
-        const tasks = await tasksRes.json()
-        totalTasks = tasks?.length || 0
-        completedTasks = tasks?.filter((t: any) => t.status === 'done' || t.status === 'completed').length || 0
+        const data = await tasksRes.json()
+        const tasks = Array.isArray(data?.tasks) ? data.tasks : (Array.isArray(data) ? data : [])
+        totalTasks = tasks.length
+        completedTasks = tasks.filter((t: any) => t.status === 'done' || t.status === 'completed').length
       }
 
       setStats({
@@ -116,8 +118,9 @@ export function HomeView() {
     return () => clearInterval(interval)
   }, [])
 
-  const workingAgents = agentData?.agents.filter(a => a.status === 'working').length || 0
-  const totalAgents = agentData?.agents.length || 0
+  const agents = agentData?.agents || []
+  const workingAgents = agents.filter(a => a.status === 'working').length
+  const totalAgents = agents.length
 
   // Pop 建议（基于实际数据生成）
   const popSuggestions = [
@@ -243,7 +246,7 @@ export function HomeView() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-                {agentData?.agents.map((agent, index) => (
+                {agents.map((agent, index) => (
                   <div 
                     key={agent.type}
                     className="p-3 rounded-lg bg-muted/30 hover:bg-muted/50 hover-lift cursor-pointer border border-border/50 animate-fade-in-up"

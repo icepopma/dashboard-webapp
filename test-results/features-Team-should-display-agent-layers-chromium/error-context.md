@@ -1,0 +1,116 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - main [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e7]: 🫧
+          - generic [ref=e8]:
+            - heading "Pop" [level=1] [ref=e9]
+            - paragraph [ref=e10]: Mission Control
+        - button "EN" [ref=e11]:
+          - img
+          - text: EN
+      - navigation [ref=e15]:
+        - list [ref=e16]:
+          - listitem [ref=e17]:
+            - button "Pop" [ref=e18]:
+              - img [ref=e19]
+              - text: Pop
+          - listitem [ref=e22]:
+            - button "首页" [ref=e23]:
+              - img [ref=e24]
+              - text: 首页
+          - listitem [ref=e27]:
+            - button "任务" [ref=e28]:
+              - img [ref=e29]
+              - text: 任务
+          - listitem [ref=e31]:
+            - button "内容" [ref=e32]:
+              - img [ref=e33]
+              - text: 内容
+          - listitem [ref=e37]:
+            - button "审批" [ref=e38]:
+              - img [ref=e39]
+              - text: 审批
+          - listitem [ref=e42]:
+            - button "委员会" [ref=e43]:
+              - img [ref=e44]
+              - text: 委员会
+          - listitem [ref=e48]:
+            - button "日历" [ref=e49]:
+              - img [ref=e50]
+              - text: 日历
+          - listitem [ref=e52]:
+            - button "项目" [ref=e53]:
+              - img [ref=e54]
+              - text: 项目
+          - listitem [ref=e56]:
+            - button "记忆" [ref=e57]:
+              - img [ref=e58]
+              - text: 记忆
+          - listitem [ref=e66]:
+            - button "文档" [ref=e67]:
+              - img [ref=e68]
+              - text: 文档
+          - listitem [ref=e73]:
+            - button "人员" [ref=e74]:
+              - img [ref=e75]
+              - text: 人员
+          - listitem [ref=e78]:
+            - button "办公室" [ref=e79]:
+              - img [ref=e80]
+              - text: 办公室
+          - listitem [ref=e83]:
+            - button "团队" [active] [ref=e84]:
+              - img [ref=e85]
+              - text: 团队
+      - generic [ref=e91]:
+        - generic [ref=e92]: v1.0.0 • OpenClaw
+        - button "切换主题" [ref=e93]:
+          - img
+          - generic [ref=e94]: 切换主题
+    - generic [ref=e95]:
+      - button "快捷键 (?)" [ref=e97]:
+        - img
+      - generic [ref=e98]:
+        - generic [ref=e99]:
+          - generic [ref=e100]:
+            - heading "认识团队" [level=2] [ref=e101]
+            - paragraph [ref=e102]: 个 AI agents，每个都有真实的角色和个性。
+          - generic [ref=e103]:
+            - generic [ref=e104]: 0/0 工作中
+            - button "刷新" [ref=e106]:
+              - img
+              - text: 刷新
+            - button "添加成员" [ref=e107]:
+              - img
+              - text: 添加成员
+        - generic [ref=e109]:
+          - generic [ref=e112]:
+            - img [ref=e114]
+            - generic [ref=e119]:
+              - generic [ref=e120]: "0"
+              - generic [ref=e121]: 总成员
+          - generic [ref=e124]:
+            - img [ref=e126]
+            - generic [ref=e128]:
+              - generic [ref=e129]: "0"
+              - generic [ref=e130]: 工作中
+          - generic [ref=e133]:
+            - img [ref=e135]
+            - generic [ref=e138]:
+              - generic [ref=e139]: "0"
+              - generic [ref=e140]: 空闲
+          - generic [ref=e143]:
+            - img [ref=e145]
+            - generic [ref=e147]:
+              - generic [ref=e148]: NaN%
+              - generic [ref=e149]: 平均成功率
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e156] [cursor=pointer]:
+    - img [ref=e157]
+  - alert [ref=e160]
+```

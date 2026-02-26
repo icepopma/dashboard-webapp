@@ -56,7 +56,8 @@ export function PopView() {
       const response = await fetch('/api/agents')
       if (!response.ok) throw new Error('Failed to fetch')
       const result = await response.json()
-      setData(result)
+      // API returns { success: true, data: { agents: [...] } }
+      setData(result.data || result)
       setError(null)
     } catch (err) {
       setError('无法获取智能体状态')
@@ -71,7 +72,7 @@ export function PopView() {
       const response = await fetch('/api/tasks')
       if (!response.ok) throw new Error('Failed to fetch tasks')
       const result = await response.json()
-      setTasks(result.tasks || [])
+      setTasks(result.tasks || result.data?.tasks || [])
     } catch (err) {
       console.error('Failed to fetch tasks:', err)
     }
@@ -129,9 +130,10 @@ export function PopView() {
     )
   }
 
-  const workingAgents = data?.agents.filter(a => a.status === 'working').length || 0
-  const totalAgents = data?.agents.length || 0
-  const popAgent = data?.agents.find(a => a.type === 'pop')
+  const agents = Array.isArray(data?.agents) ? data.agents : []
+  const workingAgents = agents.filter((a: any) => a?.status === 'working').length
+  const totalAgents = agents.length
+  const popAgent = agents.find((a: any) => a?.type === 'pop')
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
@@ -238,7 +240,7 @@ export function PopView() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {data?.agents.map((agent, index) => (
+                {agents.map((agent, index) => (
                   <div 
                     key={agent.type}
                     className="p-4 rounded-lg bg-muted/30 hover:bg-muted/50 hover-lift cursor-pointer border border-border/50 animate-fade-in-up"
