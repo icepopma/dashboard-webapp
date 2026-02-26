@@ -1,10 +1,12 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { RotateCcw, ZoomIn, ZoomOut, Maximize2, Volume2, VolumeX } from 'lucide-react'
+import { RotateCcw, ZoomIn, ZoomOut, Maximize2, Volume2, VolumeX, AlertTriangle } from 'lucide-react'
+import { useSound, useUrgentAlarm, type SoundType } from '@/hooks/use-sound'
+import { SoundControl, UrgentModeButton } from '@/components/sound-control'
 import { cn } from '@/lib/utils'
 import type { AgentType } from '@/orchestrator/types'
 
@@ -71,6 +73,28 @@ export function OfficeView() {
   const [zoom, setZoom] = useState(1)
   const [loading, setLoading] = useState(true)
   const [selectedAgent, setSelectedAgent] = useState<AgentType | null>(null)
+  const [isUrgentMode, setIsUrgentMode] = useState(false)
+
+  // 音效系统
+  const { play, enabled, setEnabled, volume, setVolume } = useSound()
+  const urgentAlarm = useUrgentAlarm()
+
+  // 紧急模式切换
+  const toggleUrgentMode = useCallback(() => {
+    const newMode = !isUrgentMode
+    setIsUrgentMode(newMode)
+    if (newMode && enabled) {
+      urgentAlarm.start()
+      play('urgent')
+    } else {
+      urgentAlarm.stop()
+    }
+  }, [isUrgentMode, enabled, urgentAlarm, play])
+
+  // 测试音效
+  const playTestSound = useCallback((type: SoundType) => {
+    play(type)
+  }, [play])
 
   // 获取智能体状态
   useEffect(() => {
@@ -213,6 +237,24 @@ export function OfficeView() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {/* 紧急模式按钮 */}
+          <UrgentModeButton
+            isUrgent={isUrgentMode}
+            onToggle={toggleUrgentMode}
+          />
+          
+          {/* 音效控制 */}
+          <SoundControl
+            enabled={enabled}
+            onEnabledChange={setEnabled}
+            volume={volume}
+            onVolumeChange={setVolume}
+            onPlayTest={playTestSound}
+            compact
+          />
+          
+          <div className="w-px h-6 bg-border mx-1" />
+          
           <Button
             variant="outline"
             size="sm"
@@ -239,8 +281,21 @@ export function OfficeView() {
       </div>
 
       {/* Office Canvas */}
-      <div className="flex-1 px-6 pb-6 overflow-auto flex items-center justify-center">
-        <div className="relative border-2 border-border rounded-lg overflow-hidden bg-muted/30">
+      <div className="flex-1 px-6 pb-6 overflow-auto flex flex-col items-center justify-center gap-4">
+        {/* 紧急模式横幅 */}
+        {isUrgentMode && (
+          <div className="w-full max-w-2xl bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-2 flex items-center justify-center gap-2 text-red-500 animate-pulse">
+            <AlertTriangle className="h-4 w-4" />
+            <span className="font-medium">紧急模式已激活 - 所有智能体已暂停</span>
+          </div>
+        )}
+
+        <div className={cn(
+          "relative border-2 rounded-lg overflow-hidden bg-muted/30 transition-all",
+          isUrgentMode 
+            ? "border-red-500 animate-pulse shadow-lg shadow-red-500/20" 
+            : "border-border"
+        )}>
           <canvas
             ref={canvasRef}
             className="cursor-pointer"
