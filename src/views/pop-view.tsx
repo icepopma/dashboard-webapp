@@ -93,7 +93,15 @@ export function PopView() {
   const [taskResults, setTaskResults] = useState<Map<string, TaskResultData>>(new Map())
   const [selectedTaskResult, setSelectedTaskResult] = useState<TaskResultData | null>(null)
   const [resultDialogOpen, setResultDialogOpen] = useState(false)
-  const [pendingCompletions, setPendingCompletions] = useState<Set<string>>(new Set())
+  
+  // 跟踪正在运行的任务（派发时添加，完成时移除）
+  const [runningTasks, setRunningTasks] = useState<Map<string, { 
+    agent: string; 
+    agentName: string;
+    agentEmoji: string;
+    title: string;
+    startTime: number;
+  }>>(new Map())
 
   // 获取智能体状态
   const fetchAgentStates = async () => {
@@ -149,10 +157,10 @@ export function PopView() {
       fetchTasks()
     }, 30000)
     
-    // 模拟任务完成检测（每10秒检查一次）
+    // 检查任务完成（模拟）
     const completionCheck = setInterval(() => {
       checkTaskCompletions()
-    }, 10000)
+    }, 5000) // 改为5秒检查一次
     
     return () => {
       clearInterval(interval)
@@ -162,21 +170,27 @@ export function PopView() {
   
   // 检查任务完成（模拟）
   const checkTaskCompletions = useCallback(() => {
-    const agents = Array.isArray(data?.agents) ? data.agents : []
-    
-    agents.forEach(agent => {
-      if (agent.status === 'working' && agent.currentTask) {
-        // 模拟：30% 概率完成任务
-        if (Math.random() < 0.3) {
-          const taskId = `task-${Date.now()}`
-          const result = generateMockTaskResult(taskId, agent.currentTask, agent.type)
+    setRunningTasks(prev => {
+      const updated = new Map(prev)
+      let changed = false
+      
+      updated.forEach((task, taskId) => {
+        // 50% 概率完成任务（每5秒检查一次，平均10秒完成）
+        if (Math.random() < 0.5) {
+          changed = true
+          
+          const duration = Math.floor((Date.now() - task.startTime) / 1000)
+          const result = generateMockTaskResult(taskId, task.title, task.agent)
+          result.duration = duration
+          result.completedAt = new Date().toISOString()
+          result.startedAt = new Date(task.startTime).toISOString()
           
           // 保存结果
-          setTaskResults(prev => new Map(prev).set(taskId, result))
+          setTaskResults(results => new Map(results).set(taskId, result))
           
           // 显示通知
-          toast.success(`${agent.config?.emoji || '🤖'} ${agent.config?.name || agent.type} 完成了任务`, {
-            description: agent.currentTask,
+          toast.success(`${task.agentEmoji} ${task.agentName} 完成了任务`, {
+            description: task.title,
             action: {
               label: '查看结果',
               onClick: () => {
@@ -186,12 +200,17 @@ export function PopView() {
             }
           })
           
-          // 更新智能体状态为空闲
-          fetchAgentStates()
+          // 从运行中移除
+          updated.delete(taskId)
+          
+          // 更新智能体状态为空闲（通过 API）
+          fetch('/api/agents/' + task.agent + '/resume', { method: 'POST' }).catch(() => {})
         }
-      }
+      })
+      
+      return changed ? updated : prev
     })
-  }, [data?.agents])
+  }, [])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -381,7 +400,21 @@ export function PopView() {
 
           {/* Task Dispatch Input */}
           <TaskDispatchInput 
-            onTaskDispatched={() => {
+            onTaskDispatched={(result) => {
+              // 添加到运行中任务列表
+              if (result?.task?.id && result?.dispatch?.agent) {
+                setRunningTasks(prev => {
+                  const updated = new Map(prev)
+                  updated.set(result.task.id, {
+                    agent: result.dispatch.agent,
+                    agentName: result.dispatch.agentName,
+                    agentEmoji: result.dispatch.agentEmoji,
+                    title: result.task.title,
+                    startTime: Date.now(),
+                  })
+                  return updated
+                })
+              }
               fetchTasks()
               fetchAgentStates()
             }}

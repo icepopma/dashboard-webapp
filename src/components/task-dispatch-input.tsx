@@ -26,7 +26,7 @@ interface DispatchResult {
 }
 
 interface TaskDispatchInputProps {
-  onTaskDispatched?: () => void
+  onTaskDispatched?: (result: DispatchResult) => void
 }
 
 export function TaskDispatchInput({ onTaskDispatched }: TaskDispatchInputProps) {
@@ -95,7 +95,7 @@ export function TaskDispatchInput({ onTaskDispatched }: TaskDispatchInputProps) 
       setSuccess(true)
       setInput('')
       setRecommendation(null)
-      onTaskDispatched?.()
+      onTaskDispatched?.(data)
       
       // 5秒后隐藏成功提示
       setTimeout(() => {
