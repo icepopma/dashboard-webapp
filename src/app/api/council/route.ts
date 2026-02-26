@@ -5,7 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // 内存存储
-let votes: any[] = [
+const votes: any[] = [
   {
     id: 'vote-001',
     title: '选择前端框架：React vs Vue',

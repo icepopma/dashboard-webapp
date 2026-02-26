@@ -5,7 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // 内存存储
-let projects: any[] = [
+const projects: any[] = [
   {
     id: 'proj-001',
     name: 'Dashboard Webapp',

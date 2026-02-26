@@ -5,7 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // 内存存储（降级使用）
-let memoryApprovals: any[] = [
+const memoryApprovals: any[] = [
   {
     id: 'apr-001',
     title: '部署 Dashboard 到生产环境',

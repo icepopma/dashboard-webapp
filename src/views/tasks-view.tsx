@@ -1,13 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { 
-  CheckCircle2, Circle, Clock, AlertTriangle, Plus, RotateCcw,
+  CheckCircle2, Circle, AlertTriangle, RotateCcw,
   Filter, LayoutGrid, List, ArrowUpDown, Calendar, User,
-  ChevronDown, ChevronRight, Play, Pause, Ban, AlertCircle,
+  Play, Ban, AlertCircle,
   Sunrise, UserCircle, GripVertical, CheckSquare, Square, X as XIcon, Trash2
 } from 'lucide-react'
 import { useI18n } from '@/lib/i18n'
@@ -24,7 +24,6 @@ import {
   useSensors,
   DragStartEvent,
   DragEndEvent,
-  DragOverEvent,
 } from '@dnd-kit/core'
 import {
   useSortable,

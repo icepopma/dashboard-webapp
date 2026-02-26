@@ -98,7 +98,7 @@ function updateWalking(
   tiles: TileType[][],
   blockedTiles: Set<string>,
 ): Character {
-  let newState = { ...char }
+  const newState = { ...char }
 
   // Update frame
   newState.frameTimer += dt
@@ -160,7 +160,7 @@ function updateWalking(
 }
 
 function updateTyping(char: Character, dt: number): Character {
-  let newState = { ...char }
+  const newState = { ...char }
 
   // Update frame
   newState.frameTimer += dt
@@ -173,7 +173,7 @@ function updateTyping(char: Character, dt: number): Character {
 }
 
 function updateIdle(char: Character, dt: number): Character {
-  let newState = { ...char }
+  const newState = { ...char }
 
   // Random wandering
   newState.wanderTimer -= dt
