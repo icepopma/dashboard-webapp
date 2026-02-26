@@ -34,8 +34,8 @@ export function CalendarView() {
       const data = await res.json()
       
       if (data.tasks && data.tasks.length > 0) {
-        const calendarTasks: CalendarTask[] = data.tasks.map((task: any) => ({
-          id: task.id,
+        const calendarTasks: CalendarTask[] = data.tasks.map((task: any, index: number) => ({
+          id: task.id || `task-${index}-${task.name || 'unknown'}`,
           name: task.name,
           title: task.name, // For display
           type: task.type || 'cron',
@@ -160,8 +160,8 @@ export function CalendarView() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {upcomingTasks.map(task => (
-                    <div key={task.id} className="p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                  {upcomingTasks.map((task, index) => (
+                    <div key={task.id || `upcoming-${index}-${task.name}`} className="p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
@@ -204,8 +204,8 @@ export function CalendarView() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {completedTasks.map(task => (
-                    <div key={task.id} className="p-2 rounded-lg bg-muted/20 text-sm">
+                  {completedTasks.map((task, index) => (
+                    <div key={task.id || `completed-${index}-${task.name}`} className="p-2 rounded-lg bg-muted/20 text-sm">
                       <div className="flex items-center gap-2">
                         {getStatusIcon(task.status)}
                         <span className="truncate">{task.title}</span>
