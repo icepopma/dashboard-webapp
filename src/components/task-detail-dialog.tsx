@@ -23,7 +23,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import {
   Loader2, Calendar, User, Clock, Trash2,
-  CheckCircle2, Play, Ban, Circle, AlertTriangle, Plus, ListTodo, X as XIcon, History, MessageSquare, Send, Tag
+  CheckCircle2, Play, Ban, Circle, AlertTriangle, Plus, ListTodo, X as XIcon, History, MessageSquare, Send, Tag, Link2, ArrowRight
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -127,6 +127,9 @@ export function TaskDetailDialog({
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [newTagName, setNewTagName] = useState('')
   const [tagLoading, setTagLoading] = useState(false)
+  const [dependencies, setDependencies] = useState<{id: string; depends_on_task_id: string}[]>([])
+  const [allTasks, setAllTasks] = useState<Task[]>([])
+  const [showDependencySelector, setShowDependencySelector] = useState(false)
 
   // 当任务改变时更新表单
   useEffect(() => {
@@ -143,6 +146,8 @@ export function TaskDetailDialog({
       fetchLogs()
       fetchComments()
       fetchTags()
+      fetchDependencies()
+      fetchAllTasks()
       setSelectedTags(task.tags || [])
     }
     setDeleteConfirm(false)
@@ -156,6 +161,60 @@ export function TaskDetailDialog({
       setAvailableTags(data.tags || [])
     } catch (err) {
       console.error('Failed to fetch tags:', err)
+    }
+  }
+
+  // 获取依赖关系
+  const fetchDependencies = async () => {
+    if (!task) return
+    try {
+      const res = await fetch(`/api/tasks/${task.id}/dependencies`)
+      const data = await res.json()
+      setDependencies(data.dependencies || [])
+    } catch (err) {
+      console.error('Failed to fetch dependencies:', err)
+    }
+  }
+
+  // 获取所有任务（用于依赖选择）
+  const fetchAllTasks = async () => {
+    try {
+      const res = await fetch('/api/tasks')
+      const data = await res.json()
+      setAllTasks(data.tasks || [])
+    } catch (err) {
+      console.error('Failed to fetch all tasks:', err)
+    }
+  }
+
+  // 添加依赖
+  const handleAddDependency = async (dependsOnTaskId: string) => {
+    if (!task) return
+    try {
+      await fetch(`/api/tasks/${task.id}/dependencies`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ depends_on_task_id: dependsOnTaskId }),
+      })
+      fetchDependencies()
+      setShowDependencySelector(false)
+    } catch (err) {
+      console.error('Failed to add dependency:', err)
+    }
+  }
+
+  // 删除依赖
+  const handleRemoveDependency = async (dependsOnTaskId: string) => {
+    if (!task) return
+    try {
+      await fetch(`/api/tasks/${task.id}/dependencies`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ depends_on_task_id: dependsOnTaskId }),
+      })
+      fetchDependencies()
+    } catch (err) {
+      console.error('Failed to remove dependency:', err)
     }
   }
 
@@ -588,6 +647,92 @@ export function TaskDetailDialog({
                 {tagLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
               </Button>
             </div>
+          </div>
+
+          {/* 任务依赖 */}
+          <div className="space-y-3 pt-2 border-t">
+            <div className="flex items-center gap-2">
+              <Link2 className="h-4 w-4 text-cyan-500" />
+              <Label className="text-sm font-medium">依赖任务</Label>
+              <Badge variant="outline" className="text-[10px]">
+                {dependencies.length}
+              </Badge>
+            </div>
+
+            {/* 依赖列表 */}
+            <div className="space-y-2">
+              {dependencies.map((dep) => {
+                const depTask = allTasks.find(t => t.id === dep.depends_on_task_id)
+                return (
+                  <div 
+                    key={dep.id}
+                    className="flex items-center justify-between p-2 rounded-lg bg-muted/30"
+                  >
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <ArrowRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                      <span className="text-sm truncate">{depTask?.title || '未知任务'}</span>
+                      {depTask && (
+                        <Badge 
+                          variant="outline" 
+                          className={cn(
+                            "text-[10px]",
+                            depTask.status === 'done' && "text-green-500 border-green-500/30",
+                            depTask.status !== 'done' && "text-orange-500 border-orange-500/30"
+                          )}
+                        >
+                          {depTask.status === 'done' ? '✓ 完成' : '○ 未完成'}
+                        </Badge>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleRemoveDependency(dep.depends_on_task_id)}
+                      className="opacity-0 hover:opacity-100 transition-opacity"
+                    >
+                      <XIcon className="h-3 w-3 text-red-500" />
+                    </button>
+                  </div>
+                )
+              })}
+              {dependencies.length === 0 && (
+                <div className="text-xs text-muted-foreground text-center py-2">
+                  无依赖任务
+                </div>
+              )}
+            </div>
+
+            {/* 添加依赖 */}
+            {showDependencySelector ? (
+              <div className="p-2 rounded-lg bg-muted/30 space-y-2 max-h-40 overflow-auto">
+                {allTasks
+                  .filter(t => t.id !== task?.id && !dependencies.some(d => d.depends_on_task_id === t.id))
+                  .slice(0, 10)
+                  .map((t) => (
+                    <div
+                      key={t.id}
+                      className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 cursor-pointer"
+                      onClick={() => handleAddDependency(t.id)}
+                    >
+                      <Circle className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-sm truncate">{t.title}</span>
+                    </div>
+                  ))}
+                {allTasks.filter(t => t.id !== task?.id).length === 0 && (
+                  <div className="text-xs text-muted-foreground text-center py-2">
+                    没有可选任务
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowDependencySelector(true)}
+                className="w-full"
+              >
+                <Plus className="h-3 w-3 mr-2" />
+                添加依赖
+              </Button>
+            )}
           </div>
 
           {/* 子任务 */}
