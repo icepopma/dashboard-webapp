@@ -35,6 +35,7 @@ export const PUT = apiHandler(async (request, context) => {
     status?: 'todo' | 'in_progress' | 'done' | 'blocked'
     priority?: 'low' | 'medium' | 'high'
     assignee?: string
+    due_date?: string
   }>(request)
 
   const updates: Record<string, any> = {}
@@ -64,6 +65,10 @@ export const PUT = apiHandler(async (request, context) => {
 
   if (body.assignee !== undefined) {
     updates.assignee = body.assignee
+  }
+
+  if (body.due_date !== undefined) {
+    updates.due_date = body.due_date || null
   }
 
   if (Object.keys(updates).length === 0) {

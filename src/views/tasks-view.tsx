@@ -13,6 +13,7 @@ import {
 import { useI18n } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { CreateProjectTaskDialog } from '@/components/create-project-task-dialog'
+import { TaskDetailDialog } from '@/components/task-detail-dialog'
 
 interface Task {
   id: string
@@ -39,6 +40,8 @@ export function TasksView() {
   const [sortBy, setSortBy] = useState<SortBy>('priority')
   const [filterStatus, setFilterStatus] = useState<string | null>(null)
   const [smartFilter, setSmartFilter] = useState<SmartFilter>('all')
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+  const [detailOpen, setDetailOpen] = useState(false)
 
   const fetchTasks = async () => {
     try {
@@ -224,6 +227,12 @@ export function TasksView() {
     }
   }
 
+  // 点击任务卡片
+  const handleTaskClick = (task: Task) => {
+    setSelectedTask(task)
+    setDetailOpen(true)
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -266,6 +275,7 @@ export function TasksView() {
                       "border-border/40 shadow-sm hover:shadow-md transition-all cursor-pointer",
                       config.border
                     )}
+                    onClick={() => handleTaskClick(task)}
                   >
                     <CardContent className="p-3">
                       <div className="flex items-start justify-between gap-2 mb-2">
@@ -325,7 +335,8 @@ export function TasksView() {
         return (
           <Card 
             key={task.id}
-            className="border-border/40 shadow-sm hover:shadow-md transition-shadow"
+            className="border-border/40 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => handleTaskClick(task)}
           >
             <CardContent className="p-4">
               <div className="flex items-center gap-4">
@@ -525,6 +536,15 @@ export function TasksView() {
       <div className="flex-1 px-6 pb-6 overflow-auto">
         {viewMode === 'kanban' ? <KanbanView /> : <ListView />}
       </div>
+
+      {/* Task Detail Dialog */}
+      <TaskDetailDialog
+        task={selectedTask}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        onTaskUpdated={fetchTasks}
+        onTaskDeleted={fetchTasks}
+      />
     </div>
   )
 }
