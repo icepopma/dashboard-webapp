@@ -7,10 +7,12 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { 
   Bot, Activity, Clock, CheckCircle2, AlertCircle, Zap, 
-  TrendingUp, Users, MessageSquare, Play, Pause, RotateCcw, ListTodo
+  TrendingUp, Users, MessageSquare, Play, Pause, RotateCcw, ListTodo,
+  ArrowDown, Sparkles, Radio
 } from 'lucide-react'
 import type { AgentType, Task } from '@/orchestrator/types'
 import { CreateTaskDialog } from '@/components/create-task-dialog'
+import { cn } from '@/lib/utils'
 
 interface AgentConfig {
   name: string
@@ -43,12 +45,23 @@ interface AgentData {
   timestamp: string
 }
 
+// 调度事件类型
+interface DispatchEvent {
+  id: string
+  timestamp: Date
+  fromAgent: string
+  toAgent: string
+  task: string
+  status: 'dispatching' | 'running' | 'completed'
+}
+
 export function PopView() {
   const { t } = useI18n()
   const [data, setData] = useState<AgentData | null>(null)
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [dispatchEvents, setDispatchEvents] = useState<DispatchEvent[]>([])
 
   // 获取智能体状态
   const fetchAgentStates = async () => {
@@ -56,14 +69,30 @@ export function PopView() {
       const response = await fetch('/api/agents')
       if (!response.ok) throw new Error('Failed to fetch')
       const result = await response.json()
-      // API returns { success: true, data: { agents: [...] } }
       setData(result.data || result)
       setError(null)
+      
+      // 模拟生成调度事件（后续替换为真实数据）
+      generateDispatchEvents(result.data?.agents || result.agents || [])
     } catch (err) {
       setError('无法获取智能体状态')
     } finally {
       setLoading(false)
     }
+  }
+
+  // 生成调度事件
+  const generateDispatchEvents = (agents: AgentState[]) => {
+    const workingAgents = agents.filter((a: AgentState) => a.status === 'working' && a.type !== 'pop')
+    const events: DispatchEvent[] = workingAgents.map((agent: AgentState, idx: number) => ({
+      id: `dispatch-${idx}`,
+      timestamp: new Date(),
+      fromAgent: 'pop',
+      toAgent: agent.type,
+      task: agent.currentTask || '处理任务中',
+      status: 'running' as const,
+    }))
+    setDispatchEvents(events)
   }
 
   // 获取任务列表
@@ -101,10 +130,10 @@ export function PopView() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'working': return <Badge className="bg-green-500/20 text-green-500">工作中</Badge>
-      case 'idle': return <Badge className="bg-yellow-500/20 text-yellow-500">空闲</Badge>
-      case 'offline': return <Badge className="bg-gray-500/20 text-gray-500">离线</Badge>
-      case 'error': return <Badge className="bg-red-500/20 text-red-500">错误</Badge>
+      case 'working': return <Badge className="bg-green-500/20 text-green-500 border-green-500/30">工作中</Badge>
+      case 'idle': return <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30">空闲</Badge>
+      case 'offline': return <Badge className="bg-gray-500/20 text-gray-500 border-gray-500/30">离线</Badge>
+      case 'error': return <Badge className="bg-red-500/20 text-red-500 border-red-500/30">错误</Badge>
       default: return <Badge variant="secondary">{status}</Badge>
     }
   }
@@ -131,9 +160,10 @@ export function PopView() {
   }
 
   const agents = Array.isArray(data?.agents) ? data.agents : []
-  const workingAgents = agents.filter((a: any) => a?.status === 'working').length
-  const totalAgents = agents.length
   const popAgent = agents.find((a: any) => a?.type === 'pop')
+  const subAgents = agents.filter((a: any) => a?.type !== 'pop')
+  const workingAgents = agents.filter((a: any) => a?.status === 'working')
+  const totalAgents = agents.length
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
@@ -142,7 +172,7 @@ export function PopView() {
         <div>
           <h2 className="text-xl sm:text-2xl font-semibold flex items-center gap-2">
             🫧 Pop
-            <Badge className="bg-green-500/20 text-green-500 text-xs">
+            <Badge className="bg-green-500/20 text-green-500 text-xs border-green-500/30">
               <span className="w-2 h-2 rounded-full bg-green-500 mr-1.5 animate-pulse" />
               运行中
             </Badge>
@@ -176,7 +206,7 @@ export function PopView() {
                   <Activity className="h-4 w-4 text-green-500" />
                 </div>
                 <div>
-                  <div className="text-xl font-semibold">{workingAgents}/{totalAgents}</div>
+                  <div className="text-xl font-semibold">{workingAgents.length}/{totalAgents}</div>
                   <div className="text-[10px] text-muted-foreground">工作中</div>
                 </div>
               </div>
@@ -229,43 +259,105 @@ export function PopView() {
 
       {/* Main Content */}
       <div className="flex-1 px-4 sm:px-6 pb-6 overflow-hidden flex flex-col lg:flex-row gap-4">
-        {/* Left - Agent Grid */}
-        <div className="flex-1 overflow-auto min-w-0">
-          <Card className="border-border/60 shadow-sm h-full">
+        {/* Left - Agent Hierarchy */}
+        <div className="flex-1 overflow-auto min-w-0 flex flex-col gap-4">
+          
+          {/* Pop Master Card */}
+          <Card className="border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10 shadow-lg">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="relative">
+                  <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center text-4xl shadow-lg">
+                    🫧
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-green-500 border-2 border-background animate-pulse" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="text-xl font-bold">Pop</h3>
+                    <Badge className="bg-green-500/20 text-green-500 border-green-500/30">
+                      Chief of Staff
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    主控智能体 · 负责任务分析、分配和协调
+                  </p>
+                  
+                  {/* 当前调度状态 */}
+                  <div className="flex items-center gap-2 text-sm">
+                    <Radio className="h-4 w-4 text-green-500 animate-pulse" />
+                    <span className="text-muted-foreground">当前状态：</span>
+                    <span className="font-medium">{popAgent?.currentTask || '监控系统中'}</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Dispatch Flow */}
+          {dispatchEvents.length > 0 && (
+            <div className="flex items-center justify-center py-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <ArrowDown className="h-4 w-4 animate-bounce" />
+                <span>正在调度 {dispatchEvents.length} 个任务</span>
+              </div>
+            </div>
+          )}
+
+          {/* Sub-agents Grid */}
+          <Card className="border-border/60 shadow-sm flex-1">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Users className="h-4 w-4 text-blue-500" />
                 智能体集群
+                <span className="text-xs text-muted-foreground font-normal ml-auto">
+                  {subAgents.filter(a => a.status === 'working').length}/{subAgents.length} 工作
+                </span>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {agents.map((agent, index) => (
+                {subAgents.map((agent, index) => (
                   <div 
                     key={agent.type}
-                    className="p-4 rounded-lg bg-muted/30 hover:bg-muted/50 hover-lift cursor-pointer border border-border/50 animate-fade-in-up"
-                    style={{ animationDelay: `${index * 0.05}s` }}
+                    className={cn(
+                      "p-4 rounded-xl border transition-all cursor-pointer hover:shadow-md",
+                      agent.status === 'working' 
+                        ? "bg-green-500/5 border-green-500/30 hover:border-green-500/50" 
+                        : "bg-muted/30 border-border/50 hover:border-border"
+                    )}
                   >
                     <div className="flex items-start gap-3">
                       <div className="relative">
                         <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-2xl">
                           {agent.config?.emoji || '🤖'}
                         </div>
-                        <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background ${getStatusColor(agent.status)}`} />
+                        <div className={cn(
+                          "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background",
+                          getStatusColor(agent.status)
+                        )} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{agent.config?.name || agent.type}</span>
-                          {getStatusBadge(agent.status)}
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium text-sm">{agent.config?.name || agent.type}</span>
                         </div>
-                        <div className="text-xs text-muted-foreground mt-0.5">
+                        <div className="text-xs text-muted-foreground mb-2">
                           {agent.config?.role}
                         </div>
-                        {agent.currentTask && (
-                          <div className="text-xs text-muted-foreground mt-2 truncate">
-                            📌 {agent.currentTask}
+                        
+                        {/* 当前任务 */}
+                        {agent.status === 'working' && agent.currentTask && (
+                          <div className="p-2 rounded-lg bg-green-500/10 border border-green-500/20">
+                            <div className="flex items-center gap-2 text-xs">
+                              <Sparkles className="h-3 w-3 text-green-500 animate-pulse" />
+                              <span className="text-green-600 dark:text-green-400 truncate">
+                                {agent.currentTask}
+                              </span>
+                            </div>
                           </div>
                         )}
+                        
+                        {/* 统计 */}
                         <div className="flex items-center gap-3 mt-2 text-[10px] text-muted-foreground">
                           <span>会话: {agent.sessionCount}</span>
                           <span>成功率: {(agent.successRate * 100).toFixed(0)}%</span>
@@ -281,6 +373,38 @@ export function PopView() {
 
         {/* Right - Activity Log & Tasks */}
         <div className="w-80 flex-shrink-0 flex flex-col gap-4">
+          {/* Active Dispatch */}
+          <Card className="border-border/60 shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Zap className="h-4 w-4 text-yellow-500" />
+                实时调度
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="overflow-auto max-h-48">
+              {dispatchEvents.length > 0 ? (
+                <div className="space-y-2">
+                  {dispatchEvents.map((event) => (
+                    <div key={event.id} className="p-2.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-sm">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-medium">Pop</span>
+                        <ArrowDown className="h-3 w-3 text-yellow-500" />
+                        <span className="font-medium capitalize">{event.toAgent}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {event.task}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground text-center py-4">
+                  暂无活跃调度
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Active Sessions */}
           <Card className="border-border/60 shadow-sm flex-1">
             <CardHeader className="pb-2">
@@ -330,12 +454,13 @@ export function PopView() {
                       <div className="flex-1 min-w-0">
                         <div className="font-medium truncate">{task.title}</div>
                         <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2">
-                          <span className={`px-1.5 py-0.5 rounded text-[10px] ${
+                          <span className={cn(
+                            "px-1.5 py-0.5 rounded text-[10px]",
                             task.status === 'completed' ? 'bg-green-500/20 text-green-500' :
                             task.status === 'running' ? 'bg-blue-500/20 text-blue-500' :
                             task.status === 'failed' ? 'bg-red-500/20 text-red-500' :
                             'bg-gray-500/20 text-gray-500'
-                          }`}>
+                          )}>
                             {task.status === 'completed' ? '✓ 完成' :
                              task.status === 'running' ? '▶ 运行中' :
                              task.status === 'failed' ? '✗ 失败' : '○ 待处理'}
