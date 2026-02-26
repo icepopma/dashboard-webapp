@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import type { AgentType, Task } from '@/orchestrator/types'
 import { CreateTaskDialog } from '@/components/create-task-dialog'
+import { AgentDetailSheet } from '@/components/agent-detail-sheet'
 import { cn } from '@/lib/utils'
 
 interface AgentConfig {
@@ -62,6 +63,8 @@ export function PopView() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [dispatchEvents, setDispatchEvents] = useState<DispatchEvent[]>([])
+  const [selectedAgent, setSelectedAgent] = useState<AgentState | null>(null)
+  const [detailOpen, setDetailOpen] = useState(false)
 
   // 获取智能体状态
   const fetchAgentStates = async () => {
@@ -320,6 +323,10 @@ export function PopView() {
                 {subAgents.map((agent, index) => (
                   <div 
                     key={agent.type}
+                    onClick={() => {
+                      setSelectedAgent(agent)
+                      setDetailOpen(true)
+                    }}
                     className={cn(
                       "p-4 rounded-xl border transition-all cursor-pointer hover:shadow-md",
                       agent.status === 'working' 
@@ -488,6 +495,13 @@ export function PopView() {
           最后更新: {data?.timestamp ? new Date(data.timestamp).toLocaleString() : '-'}
         </div>
       </div>
+
+      {/* Agent Detail Sheet */}
+      <AgentDetailSheet 
+        open={detailOpen} 
+        onOpenChange={setDetailOpen} 
+        agent={selectedAgent} 
+      />
     </div>
   )
 }
