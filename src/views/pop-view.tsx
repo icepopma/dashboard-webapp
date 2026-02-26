@@ -16,6 +16,7 @@ import { AgentDetailSheet } from '@/components/agent-detail-sheet'
 import { TaskDispatchInput } from '@/components/task-dispatch-input'
 import { TaskResultDialog, generateMockTaskResult } from '@/components/task-result-dialog'
 import { TaskTimeline, generateMockTimelineEvents } from '@/components/task-timeline'
+import { CollaborationGraph } from '@/components/collaboration-graph'
 import { toast } from '@/components/ui/toaster'
 import { cn } from '@/lib/utils'
 
