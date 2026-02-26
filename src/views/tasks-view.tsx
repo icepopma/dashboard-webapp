@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button'
 import { 
   CheckCircle2, Circle, Clock, AlertTriangle, Plus, RotateCcw,
   Filter, LayoutGrid, List, ArrowUpDown, Calendar, User,
-  ChevronDown, ChevronRight, Play, Pause, Ban
+  ChevronDown, ChevronRight, Play, Pause, Ban, AlertCircle,
+  Sunrise, UserCircle
 } from 'lucide-react'
 import { useI18n } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
@@ -27,6 +28,7 @@ interface Task {
 
 type ViewMode = 'kanban' | 'list'
 type SortBy = 'priority' | 'due_date' | 'created_at' | 'status'
+type SmartFilter = 'all' | 'today' | 'overdue' | 'mine'
 
 export function TasksView() {
   const { t } = useI18n()
@@ -35,6 +37,7 @@ export function TasksView() {
   const [viewMode, setViewMode] = useState<ViewMode>('kanban')
   const [sortBy, setSortBy] = useState<SortBy>('priority')
   const [filterStatus, setFilterStatus] = useState<string | null>(null)
+  const [smartFilter, setSmartFilter] = useState<SmartFilter>('all')
 
   const fetchTasks = async () => {
     try {
@@ -62,6 +65,50 @@ export function TasksView() {
   }
 
   const completionRate = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0
+
+  // 智能筛选计算
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const tomorrow = new Date(today)
+  tomorrow.setDate(tomorrow.getDate() + 1)
+
+  const smartStats = {
+    total: tasks.length,
+    today: tasks.filter(t => {
+      if (!t.due_date || t.status === 'done') return false
+      const due = new Date(t.due_date)
+      return due >= today && due < tomorrow
+    }).length,
+    overdue: tasks.filter(t => {
+      if (!t.due_date || t.status === 'done') return false
+      return new Date(t.due_date) < today
+    }).length,
+    mine: tasks.filter(t => t.assignee === 'me' || t.assignee === 'pop').length,
+  }
+
+  // 应用智能筛选
+  const getFilteredBySmart = () => {
+    if (smartFilter === 'today') {
+      return tasks.filter(t => {
+        if (!t.due_date || t.status === 'done') return false
+        const due = new Date(t.due_date)
+        return due >= today && due < tomorrow
+      })
+    } else if (smartFilter === 'overdue') {
+      return tasks.filter(t => {
+        if (!t.due_date || t.status === 'done') return false
+        return new Date(t.due_date) < today
+      })
+    } else if (smartFilter === 'mine') {
+      return tasks.filter(t => t.assignee === 'me' || t.assignee === 'pop')
+    }
+    return tasks
+  }
+
+  const filteredBySmart = getFilteredBySmart()
+  const filteredTasks = filterStatus 
+    ? filteredBySmart.filter(t => t.status === filterStatus)
+    : filteredBySmart
 
   // 获取状态配置
   const getStatusConfig = (status: string) => {
@@ -145,19 +192,14 @@ export function TasksView() {
     })
   }
 
-  // 过滤任务
-  const filteredTasks = filterStatus 
-    ? tasks.filter(t => t.status === filterStatus)
-    : tasks
-
   const sortedTasks = sortTasks(filteredTasks)
 
-  // 按状态分组（用于看板视图）
+  // 按状态分组（用于看板视图）- 使用智能筛选后的任务
   const tasksByStatus = {
-    todo: sortTasks(tasks.filter(t => t.status === 'todo')),
-    in_progress: sortTasks(tasks.filter(t => t.status === 'in_progress')),
-    done: sortTasks(tasks.filter(t => t.status === 'done')),
-    blocked: sortTasks(tasks.filter(t => t.status === 'blocked')),
+    todo: sortTasks(filteredTasks.filter(t => t.status === 'todo')),
+    in_progress: sortTasks(filteredTasks.filter(t => t.status === 'in_progress')),
+    done: sortTasks(filteredTasks.filter(t => t.status === 'done')),
+    blocked: sortTasks(filteredTasks.filter(t => t.status === 'blocked')),
   }
 
   const formatDate = (dateStr: string) => {
@@ -385,7 +427,55 @@ export function TasksView() {
       </div>
 
       {/* View Controls */}
-      <div className="px-6 mb-4 flex items-center justify-between flex-shrink-0">
+      <div className="px-6 mb-4 flex items-center justify-between flex-shrink-0 flex-wrap gap-3">
+        {/* Smart Filters */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant={smartFilter === 'all' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSmartFilter('all')}
+          >
+            全部
+            <Badge variant="secondary" className="ml-2 text-[10px]">{smartStats.total}</Badge>
+          </Button>
+          <Button
+            variant={smartFilter === 'today' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSmartFilter('today')}
+            className={smartStats.today > 0 ? 'border-orange-500/50' : ''}
+          >
+            <Sunrise className="h-4 w-4 mr-1" />
+            今日
+            {smartStats.today > 0 && (
+              <Badge variant="secondary" className="ml-2 text-[10px] bg-orange-500/20 text-orange-500">{smartStats.today}</Badge>
+            )}
+          </Button>
+          <Button
+            variant={smartFilter === 'overdue' ? 'destructive' : 'outline'}
+            size="sm"
+            onClick={() => setSmartFilter('overdue')}
+            className={smartStats.overdue > 0 ? 'border-red-500' : ''}
+          >
+            <AlertCircle className="h-4 w-4 mr-1" />
+            逾期
+            {smartStats.overdue > 0 && (
+              <Badge variant="secondary" className="ml-2 text-[10px] bg-red-500/20 text-red-500">{smartStats.overdue}</Badge>
+            )}
+          </Button>
+          <Button
+            variant={smartFilter === 'mine' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSmartFilter('mine')}
+          >
+            <UserCircle className="h-4 w-4 mr-1" />
+            我的
+            {smartStats.mine > 0 && (
+              <Badge variant="secondary" className="ml-2 text-[10px]">{smartStats.mine}</Badge>
+            )}
+          </Button>
+        </div>
+        
+        {/* View Mode Toggle */}
         <div className="flex items-center gap-2">
           <Button
             variant={viewMode === 'kanban' ? 'default' : 'outline'}
