@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { useI18n } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
+import { CreateProjectTaskDialog } from '@/components/create-project-task-dialog'
 
 interface Task {
   id: string
@@ -391,10 +392,7 @@ export function TasksView() {
             <RotateCcw className="h-4 w-4 mr-2" />
             {t('common.refresh')}
           </Button>
-          <Button size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            {t('tasks.newTask')}
-          </Button>
+          <CreateProjectTaskDialog onTaskCreated={fetchTasks} />
         </div>
       </div>
 
