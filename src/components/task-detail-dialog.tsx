@@ -23,7 +23,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import {
   Loader2, Calendar, User, Clock, Trash2,
-  CheckCircle2, Play, Ban, Circle, AlertTriangle, Plus, ListTodo, X as XIcon, History
+  CheckCircle2, Play, Ban, Circle, AlertTriangle, Plus, ListTodo, X as XIcon, History, MessageSquare, Send
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -58,6 +58,15 @@ interface TaskLog {
   old_value?: string
   new_value?: string
   actor?: string
+  created_at: string
+}
+
+interface TaskComment {
+  id: string
+  task_id: string
+  content: string
+  author?: string
+  mentions: string[]
   created_at: string
 }
 
@@ -104,6 +113,9 @@ export function TaskDetailDialog({
   const [subtaskLoading, setSubtaskLoading] = useState(false)
   const [logs, setLogs] = useState<TaskLog[]>([])
   const [logsLoading, setLogsLoading] = useState(false)
+  const [comments, setComments] = useState<TaskComment[]>([])
+  const [newComment, setNewComment] = useState('')
+  const [commentLoading, setCommentLoading] = useState(false)
 
   // 当任务改变时更新表单
   useEffect(() => {
@@ -118,6 +130,7 @@ export function TaskDetailDialog({
       })
       fetchSubtasks()
       fetchLogs()
+      fetchComments()
     }
     setDeleteConfirm(false)
   }, [task])
@@ -146,6 +159,37 @@ export function TaskDetailDialog({
       console.error('Failed to fetch logs:', err)
     } finally {
       setLogsLoading(false)
+    }
+  }
+
+  // 获取评论
+  const fetchComments = async () => {
+    if (!task) return
+    try {
+      const res = await fetch(`/api/tasks/${task.id}/comments`)
+      const data = await res.json()
+      setComments(data.comments || [])
+    } catch (err) {
+      console.error('Failed to fetch comments:', err)
+    }
+  }
+
+  // 添加评论
+  const handleAddComment = async () => {
+    if (!task || !newComment.trim()) return
+    setCommentLoading(true)
+    try {
+      await fetch(`/api/tasks/${task.id}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: newComment, author: 'Matt' }),
+      })
+      setNewComment('')
+      fetchComments()
+    } catch (err) {
+      console.error('Failed to add comment:', err)
+    } finally {
+      setCommentLoading(false)
     }
   }
 
@@ -539,6 +583,81 @@ export function TaskDetailDialog({
                 )}
               </div>
             )}
+          </div>
+
+          {/* 评论区 */}
+          <div className="space-y-3 pt-2 border-t">
+            <div className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4 text-blue-500" />
+              <Label className="text-sm font-medium">评论</Label>
+              <Badge variant="outline" className="text-[10px]">
+                {comments.length}
+              </Badge>
+            </div>
+
+            {/* 评论列表 */}
+            <div className="space-y-2 max-h-48 overflow-auto">
+              {comments.map((comment) => (
+                <div 
+                  key={comment.id}
+                  className="p-2.5 rounded-lg bg-muted/30"
+                >
+                  <div className="flex items-start gap-2">
+                    <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs flex-shrink-0">
+                      {comment.author?.charAt(0) || '?'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-medium">{comment.author || '匿名'}</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {new Date(comment.created_at).toLocaleString('zh-CN', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                        {comment.content}
+                      </p>
+                      {comment.mentions && comment.mentions.length > 0 && (
+                        <div className="flex gap-1 mt-1">
+                          {comment.mentions.map((mention) => (
+                            <span key={mention} className="text-[10px] text-blue-500">
+                              @{mention}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {comments.length === 0 && (
+                <div className="text-center py-4 text-sm text-muted-foreground">
+                  暂无评论
+                </div>
+              )}
+            </div>
+
+            {/* 添加评论 */}
+            <div className="flex gap-2">
+              <Input
+                placeholder="添加评论... (@ 提及)"
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleAddComment()}
+                className="flex-1"
+              />
+              <Button size="sm" onClick={handleAddComment} disabled={!newComment.trim() || commentLoading}>
+                {commentLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
           </div>
         </div>
 
