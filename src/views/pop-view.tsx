@@ -520,11 +520,20 @@ export function PopView() {
                 setTasks(prev => [{
                   id: result.task.id,
                   title: result.task.title,
-                  status: 'running',
-                  agent: result.dispatch.agent,
+                  description: '',
+                  status: 'in_progress',
+                  priority: 'medium',
+                  type: 'feature',
                   assignee: result.dispatch.agent,
-                  created_at: new Date().toISOString(),
-                }, ...prev])
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                  tags: [],
+                  ideaId: null,
+                  estimatedHours: null,
+                  dueDate: null,
+                  goal: '',
+                  context: '',
+                } as unknown as Task, ...prev])
               }
             }}
             onTaskCompleted={(completed) => {
