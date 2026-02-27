@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { 
   Send, Loader2, Sparkles, Bot, ArrowRight, X,
-  CheckCircle2
+  CheckCircle2, RefreshCw
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -21,15 +21,37 @@ interface AgentRecommendation {
 
 interface DispatchResult {
   task: { id: string; title: string; status: string }
-  dispatch: { agent: string; agentName: string; agentEmoji: string; sessionId: string }
+  dispatch: { 
+    agent: string
+    agentName: string
+    agentEmoji: string
+    sessionId: string
+    realSpawn?: boolean
+    runId?: string
+  }
   timestamp: string
+}
+
+interface SubagentStatus {
+  status: 'running' | 'completed' | 'error'
+  result?: string
+}
+
+interface TaskCompletedResult {
+  taskId: string
+  agent: string
+  agentName: string
+  agentEmoji: string
+  title: string
+  result: string
 }
 
 interface TaskDispatchInputProps {
   onTaskDispatched?: (result: DispatchResult) => void
+  onTaskCompleted?: (result: TaskCompletedResult) => void
 }
 
-export function TaskDispatchInput({ onTaskDispatched }: TaskDispatchInputProps) {
+export function TaskDispatchInput({ onTaskDispatched, onTaskCompleted }: TaskDispatchInputProps) {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
@@ -37,6 +59,86 @@ export function TaskDispatchInput({ onTaskDispatched }: TaskDispatchInputProps) 
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [dispatchResult, setDispatchResult] = useState<DispatchResult | null>(null)
+  const [startTime, setStartTime] = useState<number>(0)
+  
+  // Subagent 轮询状态
+  const [subagentStatus, setSubagentStatus] = useState<SubagentStatus | null>(null)
+  const [polling, setPolling] = useState(false)
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const hasCompletedRef = useRef(false)
+
+  // 清理轮询
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current)
+      }
+    }
+  }, [])
+
+  // 轮询 subagent 状态
+  const pollSubagentStatus = async (sessionId: string) => {
+    try {
+      const response = await fetch(`/api/subagents/${encodeURIComponent(sessionId)}`)
+      const data = await response.json()
+      
+      if (data.success && data.data) {
+        setSubagentStatus({
+          status: data.data.status,
+          result: data.data.result,
+        })
+        
+        // 如果完成，停止轮询并回调
+        if (data.data.status === 'completed' && !hasCompletedRef.current) {
+          hasCompletedRef.current = true
+          setPolling(false)
+          if (pollIntervalRef.current) {
+            clearInterval(pollIntervalRef.current)
+            pollIntervalRef.current = null
+          }
+          
+          // 调用完成回调，传递真实结果
+          if (dispatchResult && data.data.result) {
+            onTaskCompleted?.({
+              taskId: dispatchResult.task.id,
+              agent: dispatchResult.dispatch.agent,
+              agentName: dispatchResult.dispatch.agentName,
+              agentEmoji: dispatchResult.dispatch.agentEmoji,
+              title: dispatchResult.task.title,
+              result: data.data.result,
+            })
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Poll error:', err)
+    }
+  }
+
+  // 开始轮询
+  const startPolling = (sessionId: string) => {
+    setPolling(true)
+    setSubagentStatus({ status: 'running' })
+    hasCompletedRef.current = false
+    setStartTime(Date.now())
+    
+    // 立即检查一次
+    pollSubagentStatus(sessionId)
+    
+    // 每 2 秒轮询
+    pollIntervalRef.current = setInterval(() => {
+      pollSubagentStatus(sessionId)
+    }, 2000)
+    
+    // 最多轮询 60 次 (2 分钟)
+    setTimeout(() => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current)
+        pollIntervalRef.current = null
+        setPolling(false)
+      }
+    }, 120000)
+  }
 
   // 分析任务
   const analyzeTask = async () => {
@@ -56,7 +158,6 @@ export function TaskDispatchInput({ onTaskDispatched }: TaskDispatchInputProps) 
       if (!response.ok) throw new Error('分析失败')
       
       const result = await response.json()
-      // API 返回 { success: true, data: { recommendation: ... } }
       setRecommendation(result.data?.recommendation || result.recommendation)
     } catch (err) {
       console.error('Analyze error:', err)
@@ -97,11 +198,10 @@ export function TaskDispatchInput({ onTaskDispatched }: TaskDispatchInputProps) 
       setRecommendation(null)
       onTaskDispatched?.(data)
       
-      // 5秒后隐藏成功提示
-      setTimeout(() => {
-        setSuccess(false)
-        setDispatchResult(null)
-      }, 5000)
+      // 如果是真实派发，开始轮询
+      if (data.dispatch?.realSpawn && data.dispatch?.sessionId) {
+        startPolling(data.dispatch.sessionId)
+      }
     } catch (err) {
       console.error('Dispatch error:', err)
       setError('派发任务失败，请重试')
@@ -117,6 +217,13 @@ export function TaskDispatchInput({ onTaskDispatched }: TaskDispatchInputProps) 
     setError(null)
     setSuccess(false)
     setDispatchResult(null)
+    setSubagentStatus(null)
+    setPolling(false)
+    hasCompletedRef.current = false
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current)
+      pollIntervalRef.current = null
+    }
   }
 
   return (
@@ -198,12 +305,16 @@ export function TaskDispatchInput({ onTaskDispatched }: TaskDispatchInputProps) 
           </div>
         )}
 
-        {/* 成功提示 */}
+        {/* 成功提示 + Subagent 状态 */}
         {success && dispatchResult && (
           <div className="mt-3 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
             <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
               <CheckCircle2 className="h-4 w-4" />
               <span className="font-medium">任务已派发！</span>
+              {polling && <RefreshCw className="h-3 w-3 animate-spin ml-2" />}
+              {subagentStatus?.status === 'completed' && (
+                <span className="text-xs">({Math.floor((Date.now() - startTime) / 1000)}秒)</span>
+              )}
             </div>
             <div className="mt-2 flex items-center gap-2 text-sm">
               <span className="text-xl">{dispatchResult.dispatch.agentEmoji}</span>
@@ -213,11 +324,36 @@ export function TaskDispatchInput({ onTaskDispatched }: TaskDispatchInputProps) 
                 {dispatchResult.task.title}
               </span>
             </div>
+            
+            {/* Subagent 执行结果 */}
+            {subagentStatus && (
+              <div className="mt-3 pt-3 border-t border-green-500/20">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+                  {subagentStatus.status === 'running' && (
+                    <>
+                      <RefreshCw className="h-3 w-3 animate-spin" />
+                      <span>Subagent 正在执行...</span>
+                    </>
+                  )}
+                  {subagentStatus.status === 'completed' && (
+                    <>
+                      <CheckCircle2 className="h-3 w-3 text-green-500" />
+                      <span className="text-green-600">执行完成</span>
+                    </>
+                  )}
+                </div>
+                {subagentStatus.result && (
+                  <div className="p-2 rounded bg-black/5 dark:bg-white/5 text-xs whitespace-pre-wrap max-h-40 overflow-auto">
+                    {subagentStatus.result}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
         {/* 推荐结果 */}
-        {recommendation && (
+        {recommendation && !success && (
           <div className="mt-3 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center text-xl">

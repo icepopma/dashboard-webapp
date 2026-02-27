@@ -202,22 +202,15 @@ export function PopView() {
 
   useEffect(() => {
     fetchAgentStates()
-    fetchTasks()
+    // fetchTasks() - 不自动获取，使用本地派发的任务
     
-    // 每 30 秒刷新一次
+    // 每 5 分钟刷新一次智能体状态（不刷新任务列表）
     const interval = setInterval(() => {
       fetchAgentStates()
-      fetchTasks()
-    }, 30000)
-    
-    // 检查任务完成（模拟）
-    const completionCheck = setInterval(() => {
-      checkTaskCompletions()
-    }, 5000) // 改为5秒检查一次
+    }, 300000)
     
     return () => {
       clearInterval(interval)
-      clearInterval(completionCheck)
     }
   }, [])
   
@@ -522,9 +515,89 @@ export function PopView() {
                   task: result.task.title,
                   status: 'running',
                 }, ...prev])
+                
+                // 添加到任务列表（用于显示最近任务）
+                setTasks(prev => [{
+                  id: result.task.id,
+                  title: result.task.title,
+                  status: 'running',
+                  agent: result.dispatch.agent,
+                  assignee: result.dispatch.agent,
+                  created_at: new Date().toISOString(),
+                }, ...prev])
               }
-              fetchTasks()
-              fetchAgentStates()
+            }}
+            onTaskCompleted={(completed) => {
+              // 真实 subagent 完成回调
+              const taskInfo = runningTasks.get(completed.taskId)
+              const duration = Math.floor((Date.now() - (taskInfo?.startTime || Date.now())) / 1000)
+              
+              // 创建符合 TaskResultData 格式的真实结果
+              const result: TaskResultData = {
+                id: completed.taskId,
+                title: completed.title,
+                agent: completed.agent,
+                agentName: completed.agentName,
+                agentEmoji: completed.agentEmoji,
+                status: 'completed',
+                startedAt: new Date(taskInfo?.startTime || Date.now()).toISOString(),
+                completedAt: new Date().toISOString(),
+                duration,
+                output: {
+                  type: 'markdown',
+                  content: completed.result,
+                },
+                logs: [
+                  { time: new Date(taskInfo?.startTime || Date.now()).toISOString(), message: '任务开始执行', type: 'info' },
+                  { time: new Date().toISOString(), message: '任务完成', type: 'success' },
+                ],
+              }
+              
+              // 保存结果
+              setTaskResults(prev => new Map(prev).set(completed.taskId, result))
+              
+              // 从运行中移除
+              setRunningTasks(prev => {
+                const updated = new Map(prev)
+                updated.delete(completed.taskId)
+                return updated
+              })
+              
+              // 更新任务列表中的状态
+              setTasks(prev => prev.map(t => 
+                t.id === completed.taskId 
+                  ? { ...t, status: 'completed' }
+                  : t
+              ))
+              
+              // 更新时间线
+              setTimelineEvents(prev => {
+                const updated = [...prev]
+                const eventIndex = updated.findIndex(e => e.id === completed.taskId)
+                if (eventIndex >= 0) {
+                  updated[eventIndex] = {
+                    ...updated[eventIndex],
+                    status: 'completed',
+                    duration,
+                  }
+                }
+                return updated
+              })
+              
+              // 显示通知
+              toast.success(`${completed.agentEmoji} ${completed.agentName} 完成了任务`, {
+                description: completed.title,
+                action: {
+                  label: '查看结果',
+                  onClick: () => {
+                    setSelectedTaskResult(result)
+                    setResultDialogOpen(true)
+                  }
+                }
+              })
+              
+              // 重置智能体状态
+              fetch('/api/agents/' + completed.agent + '/resume', { method: 'POST' }).catch(() => {})
             }}
           />
 
