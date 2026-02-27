@@ -219,3 +219,56 @@ export async function deleteTask(id: string) {
   const { error } = await supabase.from('tasks').delete().eq('id', id)
   if (error) throw error
 }
+
+// Subagent Results
+export async function getSubagentResults(agentId?: string, status?: string) {
+  let query = supabase.from('subagent_results').select('*').order('created_at', { ascending: false })
+  if (agentId) query = query.eq('agent_id', agentId)
+  if (status) query = query.eq('status', status)
+  const { data, error } = await query
+  if (error) throw error
+  return data
+}
+
+export async function getSubagentResultBySessionKey(sessionKey: string) {
+  const { data, error } = await supabase
+    .from('subagent_results')
+    .select('*')
+    .eq('session_key', sessionKey)
+    .single()
+  if (error && error.code !== 'PGRST116') throw error // PGRST116 = no rows
+  return data
+}
+
+export async function createSubagentResult(result: {
+  task_id?: string
+  session_key: string
+  agent_id: string
+  status?: string
+  input?: string
+}) {
+  const { data, error } = await supabase
+    .from('subagent_results')
+    .insert(result)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updateSubagentResult(sessionKey: string, updates: {
+  status?: string
+  output?: string
+  error?: string
+  completed_at?: string
+  duration_seconds?: number
+}) {
+  const { data, error } = await supabase
+    .from('subagent_results')
+    .update(updates)
+    .eq('session_key', sessionKey)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}

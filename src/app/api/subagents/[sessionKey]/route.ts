@@ -4,9 +4,13 @@
 
 import { apiHandler } from '@/lib/api-handler'
 import { AppError } from '@/lib/errors'
+import { getSubagentResultBySessionKey, updateSubagentResult } from '@/lib/supabase'
 
 const GATEWAY_URL = process.env.OPENCLAW_GATEWAY_URL || 'http://127.0.0.1:18789'
 const GATEWAY_TOKEN = process.env.OPENCLAW_GATEWAY_TOKEN || '160ee9bafae48a448824b4eec20752e53412ca1df55f5335'
+
+// 缓存已完成的状态，避免重复更新数据库
+const completedSessions = new Set<string>()
 
 /**
  * GET /api/subagents/[sessionKey] - 获取 subagent 执行结果
@@ -59,6 +63,7 @@ export const GET = apiHandler(async (request) => {
   // 提取最后的 assistant 消息作为结果
   let lastAssistantMessage = null
   let status = 'running'
+  let duration = 0
 
   for (let i = messages.length - 1; i >= 0; i--) {
     const msg = messages[i]
@@ -81,6 +86,25 @@ export const GET = apiHandler(async (request) => {
       }
 
       break
+    }
+  }
+
+  // 如果完成且未缓存，保存到数据库
+  if (status === 'completed' && lastAssistantMessage && !completedSessions.has(sessionKey)) {
+    completedSessions.add(sessionKey)
+    
+    try {
+      // 尝试更新数据库记录
+      const existingResult = await getSubagentResultBySessionKey(sessionKey)
+      if (existingResult) {
+        await updateSubagentResult(sessionKey, {
+          status: 'completed',
+          output: lastAssistantMessage,
+          completed_at: new Date().toISOString(),
+        })
+      }
+    } catch (dbError) {
+      console.warn('Failed to update subagent result in database:', dbError)
     }
   }
 

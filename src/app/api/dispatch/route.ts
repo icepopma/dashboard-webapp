@@ -119,20 +119,31 @@ export const POST = apiHandler(async (request) => {
 
   // 尝试保存到数据库
   let dbTask = null
+  let dbResult = null
   try {
-    const { createTask } = await import('@/lib/supabase')
+    const { createTask, createSubagentResult } = await import('@/lib/supabase')
+    
+    // 创建任务
     dbTask = await createTask({
-      id: taskId,
       title,
       description: body.description,
       assignee: agentType,
       priority: body.priority || 'medium',
       status: 'in_progress',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
     })
+    
+    // 创建 subagent 结果记录（稍后由轮询更新）
+    if (dbTask?.id) {
+      dbResult = await createSubagentResult({
+        task_id: dbTask.id,
+        session_key: 'pending', // 稍后更新
+        agent_id: agentType,
+        status: 'pending',
+        input: body.description,
+      })
+    }
   } catch (dbError) {
-    console.warn('Failed to save task to database:', dbError)
+    console.warn('Failed to save to database:', dbError)
   }
 
   // 获取 OpenClaw agentId
