@@ -41,7 +41,7 @@ async function spawnSubagent(agentId: string, task: string): Promise<{
         tool: 'sessions_spawn',
         args: {
           task,
-          // 不指定 agentId，使用当前 main agent 执行
+          agentId,  // 指定目标 agent
           mode: 'run',
           cleanup: 'keep',
         },
