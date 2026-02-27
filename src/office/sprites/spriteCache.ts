@@ -1,86 +1,56 @@
-// ─────────────────────────────────────────────────────────────────
-// Sprite Cache - Pre-render sprites to offscreen canvases
-// ─────────────────────────────────────────────────────────────────
-
 import type { SpriteData } from '../types'
 
-const zoomCaches = new Map<number, WeakMap<SpriteData, HTMLCanvasElement>>()
+const spriteCanvasCache = new Map<string, HTMLCanvasElement>()
 
-// Outline cache
-const outlineCache = new WeakMap<SpriteData, SpriteData>()
-
-// Generate 1px white outline (2px larger in each dimension)
-export function getOutlineSprite(sprite: SpriteData): SpriteData {
-  const cached = outlineCache.get(sprite)
+/** Convert SpriteData to a cached canvas at a given zoom level */
+export function getCachedSprite(sprite: SpriteData, zoom: number): HTMLCanvasElement {
+  const key = `${sprite.length}-${sprite[0]?.length || 0}-${zoom}-${hashSprite(sprite)}`
+  const cached = spriteCanvasCache.get(key)
   if (cached) return cached
 
-  const rows = sprite.length
-  const cols = sprite[0]?.length || 0
-  const outline: SpriteData = []
-  
-  for (let r = 0; r < rows + 2; r++) {
-    outline.push(new Array<string>(cols + 2).fill(''))
-  }
+  const height = sprite.length
+  const width = sprite[0]?.length || 0
+  const canvas = document.createElement('canvas')
+  canvas.width = width * zoom
+  canvas.height = height * zoom
+  const ctx = canvas.getContext('2d')!
+  ctx.imageSmoothingEnabled = false
 
-  // Mark 4 cardinal neighbors as white for each opaque pixel
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      if (sprite[r][c] === '') continue
-      const er = r + 1
-      const ec = c + 1
-      if (outline[er - 1]?.[ec] === '') outline[er - 1][ec] = '#FFFFFF'
-      if (outline[er + 1]?.[ec] === '') outline[er + 1][ec] = '#FFFFFF'
-      if (outline[er]?.[ec - 1] === '') outline[er][ec - 1] = '#FFFFFF'
-      if (outline[er]?.[ec + 1] === '') outline[er][ec + 1] = '#FFFFFF'
-    }
-  }
-
-  // Clear pixels that overlap with original
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      if (sprite[r][c] !== '') {
-        outline[r + 1][c + 1] = ''
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const color = sprite[y][x]
+      if (color && color !== '') {
+        ctx.fillStyle = color
+        ctx.fillRect(x * zoom, y * zoom, zoom, zoom)
       }
     }
   }
 
-  outlineCache.set(sprite, outline)
-  return outline
-}
-
-// Get cached sprite canvas
-export function getCachedSprite(sprite: SpriteData, zoom: number): HTMLCanvasElement {
-  let cache = zoomCaches.get(zoom)
-  if (!cache) {
-    cache = new WeakMap()
-    zoomCaches.set(zoom, cache)
-  }
-
-  const cached = cache.get(sprite)
-  if (cached) return cached
-
-  const rows = sprite.length
-  const cols = sprite[0]?.length || 0
-  const canvas = document.createElement('canvas')
-  canvas.width = cols * zoom
-  canvas.height = rows * zoom
-  const ctx = canvas.getContext('2d')!
-  ctx.imageSmoothingEnabled = false
-
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      const color = sprite[r][c]
-      if (color === '') continue
-      ctx.fillStyle = color
-      ctx.fillRect(c * zoom, r * zoom, zoom, zoom)
-    }
-  }
-
-  cache.set(sprite, canvas)
+  spriteCanvasCache.set(key, canvas)
   return canvas
 }
 
-// Clear all caches
+/** Get outline sprite (white version for selection highlight) */
+export function getOutlineSprite(sprite: SpriteData): SpriteData {
+  return sprite.map((row) =>
+    row.map((cell) => {
+      if (cell && cell !== '') return '#FFFFFF'
+      return ''
+    }),
+  )
+}
+
+function hashSprite(sprite: SpriteData): string {
+  // Simple hash based on first and last rows and some samples
+  const h = sprite.length
+  const w = sprite[0]?.length || 0
+  const samples: string[] = []
+  if (h > 0) samples.push(sprite[0].join(','))
+  if (h > 1) samples.push(sprite[h - 1].join(','))
+  if (h > 2 && w > 2) samples.push(sprite[Math.floor(h / 2)][Math.floor(w / 2)])
+  return samples.join('|').slice(0, 100)
+}
+
 export function clearCache(): void {
-  zoomCaches.clear()
+  spriteCanvasCache.clear()
 }

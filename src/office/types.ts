@@ -1,30 +1,34 @@
-// ─────────────────────────────────────────────────────────────────
-// Office Types - Based on Pixel Agents
-// ─────────────────────────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────
 
-import { TILE_SIZE } from './constants'
-
-// Tile Types
 export const TileType = {
   WALL: 0,
   FLOOR_1: 1,
   FLOOR_2: 2,
   FLOOR_3: 3,
   FLOOR_4: 4,
+  FLOOR_5: 5,
+  FLOOR_6: 6,
+  FLOOR_7: 7,
   VOID: 8,
 } as const
 export type TileType = (typeof TileType)[keyof typeof TileType]
 
-// Character State
+/** Per-tile color settings for floor pattern colorization */
+export interface FloorColor {
+  h: number
+  s: number
+  b: number
+  c: number
+  colorize?: boolean
+}
+
 export const CharacterState = {
   IDLE: 'idle',
   WALK: 'walk',
   TYPE: 'type',
-  READ: 'read',
 } as const
 export type CharacterState = (typeof CharacterState)[keyof typeof CharacterState]
 
-// Direction
 export const Direction = {
   DOWN: 0,
   LEFT: 1,
@@ -33,30 +37,16 @@ export const Direction = {
 } as const
 export type Direction = (typeof Direction)[keyof typeof Direction]
 
-// Sprite Data: 2D array of hex colors ('' = transparent)
+/** 2D array of hex color strings (or '' for transparent) */
 export type SpriteData = string[][]
 
-// Floor Color for colorization
-export interface FloorColor {
-  h: number  // Hue: 0-360
-  s: number  // Saturation: 0-100
-  b: number  // Brightness: -100 to 100
-  c: number  // Contrast: -100 to 100
+/** Character sprites for all directions and states */
+export interface CharacterSprites {
+  walk: Record<Direction, [SpriteData, SpriteData, SpriteData, SpriteData]>
+  typing: Record<Direction, [SpriteData, SpriteData]>
+  reading: Record<Direction, [SpriteData, SpriteData]>
 }
 
-// Furniture Instance for rendering
-export interface FurnitureInstance {
-  sprite: SpriteData
-  x: number      // Pixel x (top-left)
-  y: number      // Pixel y (top-left)
-  zY: number     // Y value for depth sorting
-  col: number    // Grid column
-  row: number    // Grid row
-  type: string   // Furniture type
-  uid: string    // Unique ID
-}
-
-// Seat definition
 export interface Seat {
   uid: string
   seatCol: number
@@ -65,63 +55,55 @@ export interface Seat {
   assigned: boolean
 }
 
-// Character definition
-export interface Character {
-  id: number
-  name: string
-  role: string
-  state: CharacterState
-  dir: Direction
-  x: number           // Pixel position
+export interface FurnitureInstance {
+  sprite: SpriteData
+  x: number
   y: number
-  tileCol: number     // Current tile column
-  tileRow: number     // Current tile row
-  path: Array<{ col: number; row: number }>  // Remaining path
-  moveProgress: number  // 0-1 lerp between tiles
-  currentTool: string | null
-  palette: number     // Palette index (0-5)
-  hueShift: number    // Hue shift in degrees
-  frame: number       // Animation frame index
-  frameTimer: number  // Time accumulator
-  wanderTimer: number
-  wanderCount: number
-  wanderLimit: number
-  isActive: boolean
-  seatId: string | null
-  bubbleType: 'permission' | 'waiting' | 'chat' | null
-  bubbleTimer: number
-  bubbleMessage: string | null
-  seatTimer: number
-  task: string | null
+  zY: number
 }
 
-// Palette colors
-export interface CharPalette {
-  skin: string
-  shirt: string
-  pants: string
-  hair: string
-  shoes: string
+export interface ToolActivity {
+  toolId: string
+  status: string
+  done: boolean
+  permissionWait?: boolean
 }
 
-// Furniture catalog entry
+export const FurnitureType = {
+  DESK: 'desk',
+  BOOKSHELF: 'bookshelf',
+  PLANT: 'plant',
+  COOLER: 'cooler',
+  WHITEBOARD: 'whiteboard',
+  CHAIR: 'chair',
+  PC: 'pc',
+  LAMP: 'lamp',
+} as const
+export type FurnitureType = (typeof FurnitureType)[keyof typeof FurnitureType]
+
+export const EditTool = {
+  TILE_PAINT: 'tile_paint',
+  WALL_PAINT: 'wall_paint',
+  FURNITURE_PLACE: 'furniture_place',
+  FURNITURE_PICK: 'furniture_pick',
+  SELECT: 'select',
+  EYEDROPPER: 'eyedropper',
+  ERASE: 'erase',
+} as const
+export type EditTool = (typeof EditTool)[keyof typeof EditTool]
+
 export interface FurnitureCatalogEntry {
   type: string
   label: string
-  footprintW: number  // Width in tiles
-  footprintH: number  // Height in tiles
+  footprintW: number
+  footprintH: number
   sprite: SpriteData
   isDesk: boolean
-  isChair: boolean
-}
-
-// Office layout
-export interface OfficeLayout {
-  version: 1
-  cols: number
-  rows: number
-  tiles: TileType[][]
-  furniture: PlacedFurniture[]
+  category?: string
+  orientation?: string
+  canPlaceOnSurfaces?: boolean
+  backgroundTiles?: number
+  canPlaceOnWalls?: boolean
 }
 
 export interface PlacedFurniture {
@@ -129,10 +111,60 @@ export interface PlacedFurniture {
   type: string
   col: number
   row: number
+  color?: FloorColor
 }
 
-// Point type
-export interface Point {
-  col: number
-  row: number
+export interface OfficeLayout {
+  version: 1
+  cols: number
+  rows: number
+  tiles: TileType[]
+  furniture: PlacedFurniture[]
+  tileColors?: Array<FloorColor | null>
+}
+
+export interface Character {
+  id: number
+  state: CharacterState
+  dir: Direction
+  x: number
+  y: number
+  tileCol: number
+  tileRow: number
+  path: Array<{ col: number; row: number }>
+  moveProgress: number
+  currentTool: string | null
+  palette: number
+  hueShift: number
+  frame: number
+  frameTimer: number
+  wanderTimer: number
+  wanderCount: number
+  wanderLimit: number
+  isActive: boolean
+  seatId: string | null
+  bubbleType: 'permission' | 'waiting' | null
+  bubbleTimer: number
+  seatTimer: number
+  isSubagent: boolean
+  parentAgentId: number | null
+  matrixEffect: 'spawn' | 'despawn' | null
+  matrixEffectTimer: number
+  matrixEffectSeeds: number[]
+  name: string
+}
+
+export interface AgentInfo {
+  id: number
+  name: string
+  status: 'active' | 'idle' | 'waiting' | 'complete'
+  currentTool?: string | null
+}
+
+export interface OfficeViewProps {
+  agents?: AgentInfo[]
+  onAgentClick?: (id: number) => void
+  onDeskReassign?: (agentId: number, deskId: string) => void
+  soundEnabled?: boolean
+  onSoundToggle?: (enabled: boolean) => void
 }

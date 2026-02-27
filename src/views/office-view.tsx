@@ -1,395 +1,438 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { RotateCcw, ZoomIn, ZoomOut, Maximize2, Volume2, VolumeX, AlertTriangle } from 'lucide-react'
-import { useSound, useUrgentAlarm, type SoundType } from '@/hooks/use-sound'
-import { SoundControl, UrgentModeButton } from '@/components/sound-control'
-import { cn } from '@/lib/utils'
-import type { AgentType } from '@/orchestrator/types'
+import React, { useState, useCallback, useRef, useEffect } from 'react'
+import { OfficeState } from '@/office/engine/officeState'
+import { OfficeCanvas } from '@/components/OfficeCanvas'
+import { ZoomControls } from '@/components/ZoomControls'
+import { BottomToolbar } from '@/components/BottomToolbar'
+import { EditorToolbar } from '@/components/EditorToolbar'
+import { useSound } from '@/hooks/use-sound'
+import { ZOOM_DEFAULT_DPR_FACTOR, UNDO_STACK_MAX_SIZE, DEFAULT_FLOOR_COLOR, DEFAULT_WALL_COLOR } from '@/office/constants'
+import { EditTool, TileType, type OfficeLayout, type FloorColor, type AgentInfo } from '@/office/types'
+import { serializeLayout, deserializeLayout, createDefaultLayout } from '@/office/layout/layoutSerializer'
 
-// 像素风办公室配置
-const OFFICE_CONFIG = {
-  tileSize: 32,
-  gridWidth: 20,
-  gridHeight: 12,
+interface EditorState {
+  activeTool: EditTool
+  selectedTileType: TileType
+  selectedFurnitureType: string
+  floorColor: FloorColor
+  wallColor: FloorColor
+  undoStack: OfficeLayout[]
+  redoStack: OfficeLayout[]
 }
 
-// 智能体配置
-const AGENT_SPRITES: Record<AgentType, {
-  color: string
-  emoji: string
-  name: string
-}> = {
-  pop: { color: '#8b5cf6', emoji: '🫧', name: 'Pop' },
-  codex: { color: '#3b82f6', emoji: '🤖', name: 'Codex' },
-  claude: { color: '#10b981', emoji: '🧠', name: 'Claude' },
-  quill: { color: '#f59e0b', emoji: '✍️', name: 'Quill' },
-  echo: { color: '#ef4444', emoji: '📢', name: 'Echo' },
-  scout: { color: '#06b6d4', emoji: '🔍', name: 'Scout' },
-  pixel: { color: '#ec4899', emoji: '🎨', name: 'Pixel' },
-}
+export const OfficeView: React.FC = () => {
+  // Core state
+  const [officeState] = useState(() => new OfficeState())
+  const [zoom, setZoom] = useState(ZOOM_DEFAULT_DPR_FACTOR)
+  const [isEditMode, setIsEditMode] = useState(false)
+  const [isDirty, setIsDirty] = useState(false)
+  const panRef = useRef({ x: 0, y: 0 })
 
-// 办公室布局（0=地板, 1=墙, 2=桌子, 3=椅子）
-const OFFICE_LAYOUT = [
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-  [1,0,2,2,0,0,2,2,0,0,0,0,2,2,0,0,2,2,0,1],
-  [1,0,3,3,0,0,3,3,0,0,0,0,3,3,0,0,3,3,0,1],
-  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-  [1,0,2,2,0,0,2,2,0,0,0,0,2,2,0,0,2,2,0,1],
-  [1,0,3,3,0,0,3,3,0,0,0,0,3,3,0,0,3,3,0,1],
-  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-]
+  // Sound
+  const [soundEnabled, setSoundEnabled] = useState(true)
+  const { play } = useSound({ enabled: soundEnabled })
 
-// 智能体工位分配
-const AGENT_DESKS: Record<AgentType, { x: number; y: number }> = {
-  pop: { x: 2, y: 3 },     // 中心位置
-  codex: { x: 6, y: 3 },
-  claude: { x: 12, y: 3 },
-  pixel: { x: 16, y: 3 },
-  quill: { x: 2, y: 7 },
-  scout: { x: 6, y: 7 },
-  echo: { x: 12, y: 7 },
-}
+  // Sound helpers
+  const playTaskComplete = () => play('complete')
+  const playAgentComplete = () => play('notify')
+  const playClick = () => play('click')
 
-interface AgentState {
-  type: AgentType
-  status: 'working' | 'idle' | 'offline' | 'error'
-  currentTask?: string
-  position: { x: number; y: number }
-  animation: 'idle' | 'typing' | 'walking' | 'thinking'
-}
+  // Editor state
+  const [editorState, setEditorState] = useState<EditorState>({
+    activeTool: EditTool.SELECT,
+    selectedTileType: TileType.FLOOR_1,
+    selectedFurnitureType: 'desk',
+    floorColor: DEFAULT_FLOOR_COLOR,
+    wallColor: DEFAULT_WALL_COLOR,
+    undoStack: [],
+    redoStack: [],
+  })
 
-export function OfficeView() {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [agents, setAgents] = useState<AgentState[]>([])
-  const [zoom, setZoom] = useState(1)
-  const [loading, setLoading] = useState(true)
-  const [selectedAgent, setSelectedAgent] = useState<AgentType | null>(null)
-  const [isUrgentMode, setIsUrgentMode] = useState(false)
+  // Demo agents
+  const [agents, setAgents] = useState<AgentInfo[]>([
+    { id: 1, name: 'Pop', status: 'active', currentTool: 'Edit' },
+    { id: 2, name: 'Codex', status: 'active', currentTool: 'Read' },
+    { id: 3, name: 'Claude', status: 'idle' },
+    { id: 4, name: 'Quill', status: 'active', currentTool: 'Write' },
+    { id: 5, name: 'Echo', status: 'waiting' },
+    { id: 6, name: 'Scout', status: 'active', currentTool: 'Search' },
+  ])
 
-  // 音效系统
-  const { play, enabled, setEnabled, volume, setVolume } = useSound()
-  const urgentAlarm = useUrgentAlarm()
+  // Store last saved layout
+  const lastSavedLayoutRef = useRef<OfficeLayout>(officeState.getLayout())
 
-  // 紧急模式切换
-  const toggleUrgentMode = useCallback(() => {
-    const newMode = !isUrgentMode
-    setIsUrgentMode(newMode)
-    if (newMode && enabled) {
-      urgentAlarm.start()
-      play('urgent')
-    } else {
-      urgentAlarm.stop()
+  // Handle agent click
+  const handleAgentClick = useCallback((id: number) => {
+    playClick()
+    const agent = agents.find((a) => a.id === id)
+    if (agent) {
+      console.log('Clicked agent:', agent.name)
     }
-  }, [isUrgentMode, enabled, urgentAlarm, play])
+  }, [agents, playClick])
 
-  // 测试音效
-  const playTestSound = useCallback((type: SoundType) => {
-    play(type)
-  }, [play])
-
-  // 获取智能体状态
-  useEffect(() => {
-    const fetchAgents = async () => {
-      try {
-        const res = await fetch('/api/agents')
-        const data = await res.json()
-
-        const agentStates: AgentState[] = (data.agents || []).map((agent: any) => ({
-          type: agent.type as AgentType,
-          status: agent.status,
-          currentTask: agent.currentTask,
-          position: AGENT_DESKS[agent.type as AgentType] || { x: 10, y: 5 },
-          animation: agent.status === 'working' ? 'typing' : 'idle',
-        }))
-
-        setAgents(agentStates)
-      } catch (err) {
-        console.error('Failed to fetch agents:', err)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchAgents()
-    const interval = setInterval(fetchAgents, 5000)
-    return () => clearInterval(interval)
+  // Handle zoom change
+  const handleZoomChange = useCallback((newZoom: number) => {
+    setZoom(newZoom)
   }, [])
 
-  // 绘制办公室
+  // Handle edit mode toggle
+  const handleToggleEditMode = useCallback(() => {
+    setIsEditMode((prev) => !prev)
+    playClick()
+  }, [playClick])
+
+  // Handle sound toggle
+  const handleToggleSound = useCallback(() => {
+    setSoundEnabled((prev) => !prev)
+  }, [])
+
+  // Editor tool handlers
+  const handleToolChange = useCallback((tool: EditTool) => {
+    setEditorState((prev) => ({ ...prev, activeTool: tool }))
+    playClick()
+  }, [playClick])
+
+  const handleTileTypeChange = useCallback((type: TileType) => {
+    setEditorState((prev) => ({ ...prev, selectedTileType: type }))
+  }, [])
+
+  const handleFloorColorChange = useCallback((color: FloorColor) => {
+    setEditorState((prev) => ({ ...prev, floorColor: color }))
+  }, [])
+
+  const handleWallColorChange = useCallback((color: FloorColor) => {
+    setEditorState((prev) => ({ ...prev, wallColor: color }))
+  }, [])
+
+  const handleFurnitureTypeChange = useCallback((type: string) => {
+    setEditorState((prev) => ({ ...prev, selectedFurnitureType: type }))
+  }, [])
+
+  // Save current state to undo stack
+  const pushUndo = useCallback(() => {
+    setEditorState((prev) => ({
+      ...prev,
+      undoStack: [...prev.undoStack.slice(-UNDO_STACK_MAX_SIZE + 1), officeState.getLayout()],
+      redoStack: [],
+    }))
+    setIsDirty(true)
+  }, [officeState])
+
+  // Handle undo
+  const handleUndo = useCallback(() => {
+    if (editorState.undoStack.length === 0) return
+    const current = officeState.getLayout()
+    const previous = editorState.undoStack[editorState.undoStack.length - 1]
+    setEditorState((prev) => ({
+      ...prev,
+      undoStack: prev.undoStack.slice(0, -1),
+      redoStack: [...prev.redoStack, current],
+    }))
+    officeState.rebuildFromLayout(previous)
+    playClick()
+  }, [editorState.undoStack, officeState, playClick])
+
+  // Handle redo
+  const handleRedo = useCallback(() => {
+    if (editorState.redoStack.length === 0) return
+    const current = officeState.getLayout()
+    const next = editorState.redoStack[editorState.redoStack.length - 1]
+    setEditorState((prev) => ({
+      ...prev,
+      undoStack: [...prev.undoStack, current],
+      redoStack: prev.redoStack.slice(0, -1),
+    }))
+    officeState.rebuildFromLayout(next)
+    playClick()
+  }, [editorState.redoStack, officeState, playClick])
+
+  // Handle save
+  const handleSave = useCallback(() => {
+    lastSavedLayoutRef.current = officeState.getLayout()
+    setIsDirty(false)
+    playTaskComplete()
+    console.log('Layout saved!')
+  }, [officeState, playTaskComplete])
+
+  // Handle reset
+  const handleReset = useCallback(() => {
+    officeState.rebuildFromLayout(lastSavedLayoutRef.current)
+    setIsDirty(false)
+    playClick()
+  }, [officeState, playClick])
+
+  // Handle export
+  const handleExportLayout = useCallback(() => {
+    const json = serializeLayout(officeState.getLayout())
+    const blob = new Blob([json], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'office-layout.json'
+    a.click()
+    URL.revokeObjectURL(url)
+    playClick()
+  }, [officeState, playClick])
+
+  // Handle import
+  const handleImportLayout = useCallback(() => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.json'
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0]
+      if (!file) return
+      const text = await file.text()
+      const layout = deserializeLayout(text)
+      if (layout) {
+        pushUndo()
+        officeState.rebuildFromLayout(layout)
+        playTaskComplete()
+      }
+    }
+    input.click()
+  }, [officeState, pushUndo, playTaskComplete])
+
+  // Keyboard shortcuts
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    const { tileSize, gridWidth, gridHeight } = OFFICE_CONFIG
-    const scaledTile = tileSize * zoom
-
-    canvas.width = gridWidth * scaledTile
-    canvas.height = gridHeight * scaledTile
-
-    // 清空画布
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-    // 绘制地板和墙壁
-    for (let y = 0; y < gridHeight; y++) {
-      for (let x = 0; x < gridWidth; x++) {
-        const tile = OFFICE_LAYOUT[y][x]
-        const px = x * scaledTile
-        const py = y * scaledTile
-
-        switch (tile) {
-          case 0: // 地板
-            ctx.fillStyle = '#f5f5f5'
-            ctx.fillRect(px, py, scaledTile, scaledTile)
-            // 像素格纹理
-            ctx.strokeStyle = '#e5e5e5'
-            ctx.strokeRect(px, py, scaledTile, scaledTile)
-            break
-          case 1: // 墙
-            ctx.fillStyle = '#6366f1'
-            ctx.fillRect(px, py, scaledTile, scaledTile)
-            // 像素阴影
-            ctx.fillStyle = '#4f46e5'
-            ctx.fillRect(px, py + scaledTile - 4 * zoom, scaledTile, 4 * zoom)
-            break
-          case 2: // 桌子
-            ctx.fillStyle = '#f5f5f5'
-            ctx.fillRect(px, py, scaledTile, scaledTile)
-            ctx.fillStyle = '#92400e'
-            ctx.fillRect(px + 2 * zoom, py + 2 * zoom, scaledTile - 4 * zoom, scaledTile - 4 * zoom)
-            // 显示器
-            ctx.fillStyle = '#1f2937'
-            ctx.fillRect(px + 6 * zoom, py + 4 * zoom, scaledTile - 12 * zoom, 8 * zoom)
-            ctx.fillStyle = '#60a5fa'
-            ctx.fillRect(px + 7 * zoom, py + 5 * zoom, scaledTile - 14 * zoom, 6 * zoom)
-            break
-          case 3: // 椅子
-            ctx.fillStyle = '#f5f5f5'
-            ctx.fillRect(px, py, scaledTile, scaledTile)
-            ctx.fillStyle = '#6b7280'
-            ctx.fillRect(px + 4 * zoom, py + 8 * zoom, scaledTile - 8 * zoom, scaledTile - 12 * zoom)
-            break
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === 'z') {
+          e.preventDefault()
+          handleUndo()
+        } else if (e.key === 'y') {
+          e.preventDefault()
+          handleRedo()
+        } else if (e.key === 's') {
+          e.preventDefault()
+          handleSave()
         }
       }
     }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [handleUndo, handleRedo, handleSave])
 
-    // 绘制智能体
-    agents.forEach((agent) => {
-      const sprite = AGENT_SPRITES[agent.type]
-      const px = agent.position.x * scaledTile
-      const py = agent.position.y * scaledTile
+  // Simulate agent activity changes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setAgents((prev) =>
+        prev.map((agent) => {
+          // Randomly change status
+          if (Math.random() < 0.1) {
+            const statuses: AgentInfo['status'][] = ['active', 'idle', 'waiting', 'complete']
+            const newStatus = statuses[Math.floor(Math.random() * statuses.length)]
+            const tools = ['Edit', 'Read', 'Write', 'Search', 'Bash', null]
+            return {
+              ...agent,
+              status: newStatus,
+              currentTool: newStatus === 'active' ? tools[Math.floor(Math.random() * tools.length)] : null,
+            }
+          }
+          return agent
+        })
+      )
+    }, 3000)
 
-      // 智能体圆圈
-      ctx.beginPath()
-      ctx.arc(px + scaledTile / 2, py + scaledTile / 2, 12 * zoom, 0, Math.PI * 2)
-      ctx.fillStyle = sprite.color
-      ctx.fill()
-
-      // 状态指示
-      if (agent.status === 'working') {
-        // 打字动画效果（小圆点）
-        const time = Date.now() / 500
-        const bounce = Math.sin(time * 2) * 2 * zoom
-        ctx.fillStyle = '#ffffff'
-        ctx.beginPath()
-        ctx.arc(px + scaledTile / 2 - 4 * zoom, py + scaledTile / 2 + bounce, 2 * zoom, 0, Math.PI * 2)
-        ctx.arc(px + scaledTile / 2, py + scaledTile / 2 + bounce, 2 * zoom, 0, Math.PI * 2)
-        ctx.arc(px + scaledTile / 2 + 4 * zoom, py + scaledTile / 2 + bounce, 2 * zoom, 0, Math.PI * 2)
-        ctx.fill()
-      }
-
-      // 绘制 emoji
-      ctx.font = `${16 * zoom}px sans-serif`
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      ctx.fillText(sprite.emoji, px + scaledTile / 2, py + scaledTile / 2 - 10 * zoom)
-    })
-
-  }, [agents, zoom])
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    )
-  }
+    return () => clearInterval(interval)
+  }, [])
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4 px-6 pt-6 flex-shrink-0">
-        <div>
-          <h2 className="text-2xl font-semibold">像素办公室</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            实时查看智能体工作状态
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* 紧急模式按钮 */}
-          <UrgentModeButton
-            isUrgent={isUrgentMode}
-            onToggle={toggleUrgentMode}
-          />
-          
-          {/* 音效控制 */}
-          <SoundControl
-            enabled={enabled}
-            onEnabledChange={setEnabled}
-            volume={volume}
-            onVolumeChange={setVolume}
-            onPlayTest={playTestSound}
-            compact
-          />
-          
-          <div className="w-px h-6 bg-border mx-1" />
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setZoom(Math.max(0.5, zoom - 0.25))}
-          >
-            <ZoomOut className="h-4 w-4" />
-          </Button>
-          <span className="text-sm text-muted-foreground">{Math.round(zoom * 100)}%</span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setZoom(Math.min(2, zoom + 0.25))}
-          >
-            <ZoomIn className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setZoom(1)}
-          >
-            <Maximize2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+    <div
+      style={{
+        width: '100%',
+        height: '100%',
+        position: 'relative',
+        overflow: 'hidden',
+        background: '#1a1a2e',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      }}
+    >
+      {/* Main Canvas */}
+      <OfficeCanvas
+        officeState={officeState}
+        agents={agents}
+        onAgentClick={handleAgentClick}
+        zoom={zoom}
+        onZoomChange={handleZoomChange}
+        panRef={panRef}
+      />
 
-      {/* Office Canvas */}
-      <div className="flex-1 px-6 pb-6 overflow-auto flex flex-col items-center justify-center gap-4">
-        {/* 紧急模式横幅 */}
-        {isUrgentMode && (
-          <div className="w-full max-w-2xl bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-2 flex items-center justify-center gap-2 text-red-500 animate-pulse">
-            <AlertTriangle className="h-4 w-4" />
-            <span className="font-medium">紧急模式已激活 - 所有智能体已暂停</span>
-          </div>
-        )}
+      {/* Vignette overlay */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.4) 100%)',
+          pointerEvents: 'none',
+          zIndex: 40,
+        }}
+      />
 
-        <div className={cn(
-          "relative border-2 rounded-lg overflow-hidden bg-muted/30 transition-all",
-          isUrgentMode 
-            ? "border-red-500 animate-pulse shadow-lg shadow-red-500/20" 
-            : "border-border"
-        )}>
-          <canvas
-            ref={canvasRef}
-            className="cursor-pointer"
-            onClick={(e) => {
-              const rect = e.currentTarget.getBoundingClientRect()
-              const x = Math.floor((e.clientX - rect.left) / (OFFICE_CONFIG.tileSize * zoom))
-              const y = Math.floor((e.clientY - rect.top) / (OFFICE_CONFIG.tileSize * zoom))
+      {/* Zoom Controls */}
+      <ZoomControls zoom={zoom} onZoomChange={handleZoomChange} />
 
-              // 检查是否点击了智能体
-              const clickedAgent = agents.find(
-                a => a.position.x === x && a.position.y === y
-              )
-              if (clickedAgent) {
-                setSelectedAgent(clickedAgent.type)
-              }
-            }}
-          />
+      {/* Bottom Toolbar */}
+      <BottomToolbar
+        isEditMode={isEditMode}
+        onToggleEditMode={handleToggleEditMode}
+        soundEnabled={soundEnabled}
+        onToggleSound={handleToggleSound}
+        onExportLayout={handleExportLayout}
+        onImportLayout={handleImportLayout}
+      />
 
-          {/* Agent Legend */}
-          <div className="absolute bottom-4 left-4 bg-background/90 backdrop-blur-sm rounded-lg p-3 border">
-            <div className="text-xs font-medium mb-2">智能体状态</div>
-            <div className="flex flex-wrap gap-2">
-              {agents.map((agent) => {
-                const sprite = AGENT_SPRITES[agent.type]
-                return (
-                  <div
-                    key={agent.type}
-                    className={cn(
-                      "flex items-center gap-1.5 px-2 py-1 rounded text-xs cursor-pointer transition-colors",
-                      selectedAgent === agent.type && "bg-primary/20 ring-1 ring-primary"
-                    )}
-                    onClick={() => setSelectedAgent(agent.type)}
-                  >
-                    <span>{sprite.emoji}</span>
-                    <span className="font-medium">{sprite.name}</span>
-                    <div className={cn(
-                      "w-2 h-2 rounded-full",
-                      agent.status === 'working' && "bg-green-500 animate-pulse",
-                      agent.status === 'idle' && "bg-yellow-500",
-                      agent.status === 'offline' && "bg-gray-400",
-                      agent.status === 'error' && "bg-red-500"
-                    )} />
-                  </div>
-                )
-              })}
+      {/* Editor Toolbar (only in edit mode) */}
+      {isEditMode && (
+        <>
+          {/* Edit Action Bar */}
+          {isDirty && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 8,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 49,
+                display: 'flex',
+                gap: 4,
+                background: 'rgba(40, 44, 52, 0.95)',
+                padding: '4px 8px',
+                borderRadius: 4,
+                border: '2px solid #444',
+              }}
+            >
+              <button
+                onClick={handleUndo}
+                disabled={editorState.undoStack.length === 0}
+                style={{
+                  padding: '4px 10px',
+                  fontSize: 12,
+                  background: editorState.undoStack.length === 0 ? '#333' : '#444',
+                  color: editorState.undoStack.length === 0 ? '#666' : '#fff',
+                  border: 'none',
+                  borderRadius: 4,
+                  cursor: editorState.undoStack.length === 0 ? 'not-allowed' : 'pointer',
+                }}
+              >
+                Undo
+              </button>
+              <button
+                onClick={handleRedo}
+                disabled={editorState.redoStack.length === 0}
+                style={{
+                  padding: '4px 10px',
+                  fontSize: 12,
+                  background: editorState.redoStack.length === 0 ? '#333' : '#444',
+                  color: editorState.redoStack.length === 0 ? '#666' : '#fff',
+                  border: 'none',
+                  borderRadius: 4,
+                  cursor: editorState.redoStack.length === 0 ? 'not-allowed' : 'pointer',
+                }}
+              >
+                Redo
+              </button>
+              <button
+                onClick={handleSave}
+                style={{
+                  padding: '4px 10px',
+                  fontSize: 12,
+                  background: '#2d5a3d',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 4,
+                  cursor: 'pointer',
+                }}
+              >
+                Save
+              </button>
+              <button
+                onClick={handleReset}
+                style={{
+                  padding: '4px 10px',
+                  fontSize: 12,
+                  background: '#5a2d2d',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 4,
+                  cursor: 'pointer',
+                }}
+              >
+                Reset
+              </button>
             </div>
-          </div>
-        </div>
-      </div>
+          )}
 
-      {/* Selected Agent Details */}
-      {selectedAgent && (
-        <div className="px-6 pb-6 flex-shrink-0">
-          <Card>
-            <CardContent className="p-4">
-              {(() => {
-                const agent = agents.find(a => a.type === selectedAgent)
-                if (!agent) return null
-                const sprite = AGENT_SPRITES[selectedAgent]
-
-                return (
-                  <div className="flex items-center gap-4">
-                    <div className="text-3xl">{sprite.emoji}</div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{sprite.name}</span>
-                        <Badge className={cn(
-                          agent.status === 'working' && "bg-green-500/20 text-green-500",
-                          agent.status === 'idle' && "bg-yellow-500/20 text-yellow-500",
-                          agent.status === 'offline' && "bg-gray-500/20 text-gray-500"
-                        )}>
-                          {agent.status === 'working' ? '工作中' : agent.status === 'idle' ? '空闲' : '离线'}
-                        </Badge>
-                      </div>
-                      {agent.currentTask && (
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {agent.currentTask}
-                        </p>
-                      )}
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSelectedAgent(null)}
-                    >
-                      ✕
-                    </Button>
-                  </div>
-                )
-              })()}
-            </CardContent>
-          </Card>
-        </div>
+          <EditorToolbar
+            activeTool={editorState.activeTool}
+            selectedTileType={editorState.selectedTileType}
+            selectedFurnitureType={editorState.selectedFurnitureType}
+            floorColor={editorState.floorColor}
+            wallColor={editorState.wallColor}
+            onToolChange={handleToolChange}
+            onTileTypeChange={handleTileTypeChange}
+            onFloorColorChange={handleFloorColorChange}
+            onWallColorChange={handleWallColorChange}
+            onFurnitureTypeChange={handleFurnitureTypeChange}
+          />
+        </>
       )}
+
+      {/* Agent Status Panel */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 16,
+          right: 16,
+          background: 'rgba(40, 44, 52, 0.95)',
+          padding: 12,
+          borderRadius: 8,
+          border: '2px solid #444',
+          zIndex: 50,
+          minWidth: 180,
+        }}
+      >
+        <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>Agents</div>
+        {agents.map((agent) => (
+          <div
+            key={agent.id}
+            onClick={() => handleAgentClick(agent.id)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '4px 8px',
+              marginBottom: 4,
+              background: officeState.selectedAgentId === agent.id ? 'rgba(0, 127, 212, 0.3)' : 'transparent',
+              borderRadius: 4,
+              cursor: 'pointer',
+            }}
+          >
+            <div
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                background:
+                  agent.status === 'active'
+                    ? '#44bb66'
+                    : agent.status === 'waiting'
+                    ? '#ffaa00'
+                    : agent.status === 'complete'
+                    ? '#44aaff'
+                    : '#888',
+              }}
+            />
+            <span style={{ fontSize: 12, color: '#fff' }}>{agent.name}</span>
+            {agent.currentTool && (
+              <span style={{ fontSize: 10, color: '#888' }}>• {agent.currentTool}</span>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
+
+export default OfficeView

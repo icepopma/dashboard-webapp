@@ -1,7 +1,3 @@
-// ─────────────────────────────────────────────────────────────────
-// Game Loop - 60fps animation loop
-// ─────────────────────────────────────────────────────────────────
-
 import { MAX_DELTA_TIME_SEC } from '../constants'
 
 export interface GameLoopCallbacks {

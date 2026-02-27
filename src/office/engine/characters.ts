@@ -1,341 +1,289 @@
-// ─────────────────────────────────────────────────────────────────
-// Characters - Character system with AI behavior
-// ─────────────────────────────────────────────────────────────────
-
-import type { Character, TileType } from '../types'
-import { WALK_SPEED_PX_PER_SEC, WALK_FRAME_DURATION_SEC, TYPE_FRAME_DURATION_SEC, TILE_SIZE } from '../constants'
+import { CharacterState, Direction } from '../types'
+import { TILE_SIZE } from '../constants'
+import type { Character, Seat, TileType as TileTypeVal } from '../types'
 import { findPath } from '../layout/tileMap'
+import {
+  WALK_SPEED_PX_PER_SEC,
+  WALK_FRAME_DURATION_SEC,
+  TYPE_FRAME_DURATION_SEC,
+  WANDER_PAUSE_MIN_SEC,
+  WANDER_PAUSE_MAX_SEC,
+  WANDER_MOVES_BEFORE_REST_MIN,
+  WANDER_MOVES_BEFORE_REST_MAX,
+  SEAT_REST_MIN_SEC,
+  SEAT_REST_MAX_SEC,
+} from '../constants'
+import type { CharacterSprites, SpriteData } from '../types'
+import { getCharacterSprites } from '../sprites/spriteData'
 
-// Create default characters
-export function createDefaultCharacters(): Character[] {
-  const agents = [
-    { name: 'Pop', role: 'Chief of Staff', palette: 0 },
-    { name: 'Codex', role: 'Engineer', palette: 1 },
-    { name: 'Quill', role: 'Writer', palette: 2 },
-    { name: 'Echo', role: 'Social Media', palette: 3 },
-    { name: 'Scout', role: 'Analyst', palette: 4 },
-    { name: 'Pixel', role: 'Designer', palette: 5 },
-  ]
+/** Tools that show reading animation */
+const READING_TOOLS = new Set(['Read', 'Grep', 'Glob', 'WebFetch', 'WebSearch', 'search', 'read', 'glob', 'grep'])
 
-  // Initial positions (near desks)
-  const positions = [
-    { col: 3, row: 6 },
-    { col: 7, row: 6 },
-    { col: 11, row: 6 },
-    { col: 15, row: 6 },
-    { col: 5, row: 8 },
-    { col: 13, row: 8 },
-  ]
+export function isReadingTool(tool: string | null): boolean {
+  if (!tool) return false
+  return READING_TOOLS.has(tool)
+}
 
-  return agents.map((agent, idx) => ({
-    id: idx + 1,
-    name: agent.name,
-    role: agent.role,
-    state: idx < 4 ? 'type' : 'idle', // 前4个正在打字
-    dir: 0 as const, // DOWN
-    x: positions[idx].col * TILE_SIZE,
-    y: positions[idx].row * TILE_SIZE,
-    tileCol: positions[idx].col,
-    tileRow: positions[idx].row,
+function tileCenter(col: number, row: number): { x: number; y: number } {
+  return {
+    x: col * TILE_SIZE + TILE_SIZE / 2,
+    y: row * TILE_SIZE + TILE_SIZE / 2,
+  }
+}
+
+function directionBetween(fromCol: number, fromRow: number, toCol: number, toRow: number): Direction {
+  const dc = toCol - fromCol
+  const dr = toRow - fromRow
+  if (dc > 0) return Direction.RIGHT
+  if (dc < 0) return Direction.LEFT
+  if (dr > 0) return Direction.DOWN
+  return Direction.UP
+}
+
+function randomRange(min: number, max: number): number {
+  return min + Math.random() * (max - min)
+}
+
+function randomInt(min: number, max: number): number {
+  return min + Math.floor(Math.random() * (max - min + 1))
+}
+
+export function createCharacter(
+  id: number,
+  palette: number,
+  seatId: string | null,
+  seat: Seat | null,
+  hueShift = 0,
+  name = 'Agent',
+): Character {
+  const col = seat ? seat.seatCol : 1
+  const row = seat ? seat.seatRow : 1
+  const center = tileCenter(col, row)
+  return {
+    id,
+    state: CharacterState.TYPE,
+    dir: seat ? seat.facingDir : Direction.DOWN,
+    x: center.x,
+    y: center.y,
+    tileCol: col,
+    tileRow: row,
     path: [],
     moveProgress: 0,
-    palette: agent.palette,
-    hueShift: 0,
+    currentTool: null,
+    palette,
+    hueShift,
     frame: 0,
     frameTimer: 0,
-    wanderTimer: Math.random() * 5,
+    wanderTimer: 0,
     wanderCount: 0,
-    wanderLimit: 3,
-    isActive: idx < 4, // First 4 are working
-    seatId: `seat-${idx + 1}`,
+    wanderLimit: randomInt(WANDER_MOVES_BEFORE_REST_MIN, WANDER_MOVES_BEFORE_REST_MAX),
+    isActive: true,
+    seatId,
     bubbleType: null,
-    bubbleMessage: null,
     bubbleTimer: 0,
     seatTimer: 0,
-    currentTool: 'pc',
-    task: idx < 4 ? ['优化 Dashboard', '构建 API', '撰写文档', '发布内容'][idx] : null,
-  }))
+    isSubagent: false,
+    parentAgentId: null,
+    matrixEffect: null,
+    matrixEffectTimer: 0,
+    matrixEffectSeeds: [],
+    name,
+  }
 }
 
-// Update character state
 export function updateCharacter(
-  char: Character,
+  ch: Character,
   dt: number,
-  tiles: TileType[][],
+  walkableTiles: Array<{ col: number; row: number }>,
+  seats: Map<string, Seat>,
+  tileMap: TileTypeVal[][],
   blockedTiles: Set<string>,
-): Character {
-  let newState = { ...char }
+): void {
+  ch.frameTimer += dt
 
-  switch (char.state) {
-    case 'walk':
-      newState = updateWalking(newState, dt, tiles, blockedTiles)
-      break
-    case 'type':
-    case 'read':
-      newState = updateTyping(newState, dt)
-      break
-    case 'idle':
-    default:
-      newState = updateIdle(newState, dt)
-      break
-  }
-
-  // Update bubble timer
-  if (newState.bubbleMessage && newState.bubbleTimer > 0) {
-    newState.bubbleTimer -= dt
-    if (newState.bubbleTimer <= 0) {
-      newState.bubbleMessage = null
-      newState.bubbleType = null
-    }
-  }
-
-  return newState
-}
-
-function updateWalking(
-  char: Character,
-  dt: number,
-  tiles: TileType[][],
-  blockedTiles: Set<string>,
-): Character {
-  const newState = { ...char }
-
-  // Update frame
-  newState.frameTimer += dt
-  if (newState.frameTimer >= WALK_FRAME_DURATION_SEC) {
-    newState.frameTimer = 0
-    newState.frame = (newState.frame + 1) % 4
-  }
-
-  // Move along path
-  if (char.path.length > 0) {
-    const target = char.path[0]
-    const targetX = target.col * TILE_SIZE
-    const targetY = target.row * TILE_SIZE
-
-    const dx = targetX - char.x
-    const dy = targetY - char.y
-    const dist = Math.sqrt(dx * dx + dy * dy)
-
-    if (dist < 2) {
-      // Reached target
-      newState.x = targetX
-      newState.y = targetY
-      newState.tileCol = target.col
-      newState.tileRow = target.row
-      newState.path = char.path.slice(1)
-
-      if (newState.path.length === 0) {
-        // Path complete
-        if (char.isActive) {
-          newState.state = 'type'
-        } else {
-          newState.state = 'idle'
+  switch (ch.state) {
+    case CharacterState.TYPE: {
+      if (ch.frameTimer >= TYPE_FRAME_DURATION_SEC) {
+        ch.frameTimer -= TYPE_FRAME_DURATION_SEC
+        ch.frame = (ch.frame + 1) % 2
+      }
+      if (!ch.isActive) {
+        if (ch.seatTimer > 0) {
+          ch.seatTimer -= dt
+          break
         }
-        newState.frame = 0
-        newState.frameTimer = 0
+        ch.seatTimer = 0
+        ch.state = CharacterState.IDLE
+        ch.frame = 0
+        ch.frameTimer = 0
+        ch.wanderTimer = randomRange(WANDER_PAUSE_MIN_SEC, WANDER_PAUSE_MAX_SEC)
+        ch.wanderCount = 0
+        ch.wanderLimit = randomInt(WANDER_MOVES_BEFORE_REST_MIN, WANDER_MOVES_BEFORE_REST_MAX)
       }
-    } else {
-      // Move towards target
-      const speed = WALK_SPEED_PX_PER_SEC * dt
-      const moveX = (dx / dist) * Math.min(speed, dist)
-      const moveY = (dy / dist) * Math.min(speed, dist)
+      break
+    }
 
-      newState.x = char.x + moveX
-      newState.y = char.y + moveY
-
-      // Update direction
-      if (Math.abs(dy) > Math.abs(dx)) {
-        newState.dir = dy > 0 ? 0 : 3 // DOWN or UP
-      } else {
-        newState.dir = dx > 0 ? 2 : 1 // RIGHT or LEFT
+    case CharacterState.IDLE: {
+      ch.frame = 0
+      if (ch.seatTimer < 0) ch.seatTimer = 0
+      if (ch.isActive) {
+        if (!ch.seatId) {
+          ch.state = CharacterState.TYPE
+          ch.frame = 0
+          ch.frameTimer = 0
+          break
+        }
+        const seat = seats.get(ch.seatId)
+        if (seat) {
+          const path = findPath(ch.tileCol, ch.tileRow, seat.seatCol, seat.seatRow, tileMap, blockedTiles)
+          if (path.length > 0) {
+            ch.path = path
+            ch.moveProgress = 0
+            ch.state = CharacterState.WALK
+            ch.frame = 0
+            ch.frameTimer = 0
+          } else {
+            ch.state = CharacterState.TYPE
+            ch.dir = seat.facingDir
+            ch.frame = 0
+            ch.frameTimer = 0
+          }
+        }
+        break
       }
-    }
-  } else {
-    // No path, switch to idle
-    newState.state = 'idle'
-  }
-
-  return newState
-}
-
-function updateTyping(char: Character, dt: number): Character {
-  const newState = { ...char }
-
-  // Update frame
-  newState.frameTimer += dt
-  if (newState.frameTimer >= TYPE_FRAME_DURATION_SEC) {
-    newState.frameTimer = 0
-    newState.frame = (newState.frame + 1) % 2
-  }
-
-  return newState
-}
-
-function updateIdle(char: Character, dt: number): Character {
-  const newState = { ...char }
-
-  // Random wandering
-  newState.wanderTimer -= dt
-  if (newState.wanderTimer <= 0 && newState.wanderCount < newState.wanderLimit) {
-    // Decide to wander
-    newState.wanderTimer = 5 + Math.random() * 10
-    newState.wanderCount++
-  }
-
-  return newState
-}
-
-// Send character to target
-export function sendCharacterTo(
-  char: Character,
-  targetCol: number,
-  targetRow: number,
-  tiles: TileType[][],
-  blocked: Set<string>,
-): Character {
-  const path = findPath(
-    { col: char.tileCol, row: char.tileRow },
-    { col: targetCol, row: targetRow },
-    tiles,
-    blocked,
-  )
-
-  if (path.length > 0) {
-    return {
-      ...char,
-      path: path.slice(1), // Skip start position
-      state: 'walk',
-      frame: 0,
-      frameTimer: 0,
-      wanderCount: 0,
-    }
-  }
-
-  return char
-}
-
-// Start working
-export function startWorking(char: Character, task: string): Character {
-  return {
-    ...char,
-    isActive: true,
-    task,
-    state: 'type',
-    frame: 0,
-    frameTimer: 0,
-  }
-}
-
-// Stop working
-export function stopWorking(char: Character): Character {
-  return {
-    ...char,
-    isActive: false,
-    task: null,
-    state: 'idle',
-    frame: 0,
-    frameTimer: 0,
-  }
-}
-
-// Show chat bubble
-export function showChatBubble(char: Character, message: string): Character {
-  return {
-    ...char,
-    bubbleType: 'chat',
-    bubbleMessage: message,
-    bubbleTimer: 3, // 3 seconds
-  }
-}
-
-// Update all characters
-export function updateAllCharacters(
-  characters: Character[],
-  dt: number,
-  tiles: TileType[][],
-): Character[] {
-  // Build blocked set from current character positions
-  const blocked = new Set<string>()
-  characters.forEach(c => {
-    blocked.add(`${c.tileCol},${c.tileRow}`)
-  })
-
-  return characters.map(char => {
-    // Remove self from blocked
-    const selfKey = `${char.tileCol},${char.tileRow}`
-    blocked.delete(selfKey)
-    
-    const updated = updateCharacter(char, dt, tiles, blocked)
-    
-    // Add back to blocked
-    blocked.add(selfKey)
-    
-    return updated
-  })
-}
-
-// Move all to zone
-export function moveAllToZone(
-  characters: Character[],
-  zone: 'work' | 'coffee' | 'meeting' | 'rest',
-  tiles: TileType[][],
-): Character[] {
-  const zonePositions = {
-    work: [
-      { col: 3, row: 6 },
-      { col: 7, row: 6 },
-      { col: 11, row: 6 },
-      { col: 15, row: 6 },
-      { col: 5, row: 8 },
-      { col: 13, row: 8 },
-    ],
-    coffee: [
-      { col: 7, row: 8 },
-      { col: 8, row: 8 },
-      { col: 9, row: 8 },
-      { col: 7, row: 9 },
-      { col: 8, row: 9 },
-      { col: 9, row: 9 },
-    ],
-    meeting: [
-      { col: 10, row: 4 },
-      { col: 11, row: 4 },
-      { col: 12, row: 4 },
-      { col: 10, row: 5 },
-      { col: 11, row: 5 },
-      { col: 12, row: 5 },
-    ],
-    rest: [
-      { col: 11, row: 8 },
-      { col: 12, row: 8 },
-      { col: 13, row: 8 },
-      { col: 11, row: 9 },
-      { col: 12, row: 9 },
-      { col: 13, row: 9 },
-    ],
-  }
-
-  const positions = zonePositions[zone]
-  const blocked = new Set<string>()
-
-  return characters.map((char, idx) => {
-    const pos = positions[idx % positions.length]
-    blocked.delete(`${char.tileCol},${char.tileRow}`)
-    
-    const updated = sendCharacterTo(char, pos.col, pos.row, tiles, blocked)
-    
-    if (zone === 'work') {
-      updated.isActive = true
-      if (!updated.task) {
-        updated.task = '工作中...'
+      ch.wanderTimer -= dt
+      if (ch.wanderTimer <= 0) {
+        if (ch.wanderCount >= ch.wanderLimit && ch.seatId) {
+          const seat = seats.get(ch.seatId)
+          if (seat) {
+            const path = findPath(ch.tileCol, ch.tileRow, seat.seatCol, seat.seatRow, tileMap, blockedTiles)
+            if (path.length > 0) {
+              ch.path = path
+              ch.moveProgress = 0
+              ch.state = CharacterState.WALK
+              ch.frame = 0
+              ch.frameTimer = 0
+              break
+            }
+          }
+        }
+        if (walkableTiles.length > 0) {
+          const target = walkableTiles[Math.floor(Math.random() * walkableTiles.length)]
+          const path = findPath(ch.tileCol, ch.tileRow, target.col, target.row, tileMap, blockedTiles)
+          if (path.length > 0) {
+            ch.path = path
+            ch.moveProgress = 0
+            ch.state = CharacterState.WALK
+            ch.frame = 0
+            ch.frameTimer = 0
+            ch.wanderCount++
+          }
+        }
+        ch.wanderTimer = randomRange(WANDER_PAUSE_MIN_SEC, WANDER_PAUSE_MAX_SEC)
       }
-    } else {
-      updated.isActive = false
-      updated.task = null
+      break
     }
-    
-    blocked.add(`${pos.col},${pos.row}`)
-    return updated
-  })
+
+    case CharacterState.WALK: {
+      if (ch.frameTimer >= WALK_FRAME_DURATION_SEC) {
+        ch.frameTimer -= WALK_FRAME_DURATION_SEC
+        ch.frame = (ch.frame + 1) % 4
+      }
+
+      if (ch.path.length === 0) {
+        const center = tileCenter(ch.tileCol, ch.tileRow)
+        ch.x = center.x
+        ch.y = center.y
+
+        if (ch.isActive) {
+          if (!ch.seatId) {
+            ch.state = CharacterState.TYPE
+          } else {
+            const seat = seats.get(ch.seatId)
+            if (seat && ch.tileCol === seat.seatCol && ch.tileRow === seat.seatRow) {
+              ch.state = CharacterState.TYPE
+              ch.dir = seat.facingDir
+            } else {
+              ch.state = CharacterState.IDLE
+            }
+          }
+        } else {
+          if (ch.seatId) {
+            const seat = seats.get(ch.seatId)
+            if (seat && ch.tileCol === seat.seatCol && ch.tileRow === seat.seatRow) {
+              ch.state = CharacterState.TYPE
+              ch.dir = seat.facingDir
+              if (ch.seatTimer < 0) {
+                ch.seatTimer = 0
+              } else {
+                ch.seatTimer = randomRange(SEAT_REST_MIN_SEC, SEAT_REST_MAX_SEC)
+              }
+              ch.wanderCount = 0
+              ch.wanderLimit = randomInt(WANDER_MOVES_BEFORE_REST_MIN, WANDER_MOVES_BEFORE_REST_MAX)
+              ch.frame = 0
+              ch.frameTimer = 0
+              break
+            }
+          }
+          ch.state = CharacterState.IDLE
+          ch.wanderTimer = randomRange(WANDER_PAUSE_MIN_SEC, WANDER_PAUSE_MAX_SEC)
+        }
+        ch.frame = 0
+        ch.frameTimer = 0
+        break
+      }
+
+      const nextTile = ch.path[0]
+      ch.dir = directionBetween(ch.tileCol, ch.tileRow, nextTile.col, nextTile.row)
+
+      ch.moveProgress += (WALK_SPEED_PX_PER_SEC / TILE_SIZE) * dt
+
+      const fromCenter = tileCenter(ch.tileCol, ch.tileRow)
+      const toCenter = tileCenter(nextTile.col, nextTile.row)
+      const t = Math.min(ch.moveProgress, 1)
+      ch.x = fromCenter.x + (toCenter.x - fromCenter.x) * t
+      ch.y = fromCenter.y + (toCenter.y - fromCenter.y) * t
+
+      if (ch.moveProgress >= 1) {
+        ch.tileCol = nextTile.col
+        ch.tileRow = nextTile.row
+        ch.x = toCenter.x
+        ch.y = toCenter.y
+        ch.path.shift()
+        ch.moveProgress = 0
+      }
+
+      if (ch.isActive && ch.seatId) {
+        const seat = seats.get(ch.seatId)
+        if (seat) {
+          const lastStep = ch.path[ch.path.length - 1]
+          if (!lastStep || lastStep.col !== seat.seatCol || lastStep.row !== seat.seatRow) {
+            const newPath = findPath(ch.tileCol, ch.tileRow, seat.seatCol, seat.seatRow, tileMap, blockedTiles)
+            if (newPath.length > 0) {
+              ch.path = newPath
+              ch.moveProgress = 0
+            }
+          }
+        }
+      }
+      break
+    }
+  }
+}
+
+/** Get the correct sprite frame for a character */
+export function getCharacterSprite(ch: Character, sprites: CharacterSprites): SpriteData {
+  switch (ch.state) {
+    case CharacterState.TYPE:
+      if (isReadingTool(ch.currentTool)) {
+        return sprites.reading[ch.dir][ch.frame % 2]
+      }
+      return sprites.typing[ch.dir][ch.frame % 2]
+    case CharacterState.WALK:
+      return sprites.walk[ch.dir][ch.frame % 4]
+    case CharacterState.IDLE:
+      return sprites.walk[ch.dir][1]
+    default:
+      return sprites.walk[ch.dir][1]
+  }
 }
