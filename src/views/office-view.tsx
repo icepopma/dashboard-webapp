@@ -1,15 +1,19 @@
 'use client'
 
-import React, { useState, useCallback, useRef, useEffect } from 'react'
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import { OfficeState } from '@/office/engine/officeState'
 import { OfficeCanvas } from '@/components/OfficeCanvas'
 import { ZoomControls } from '@/components/ZoomControls'
 import { BottomToolbar } from '@/components/BottomToolbar'
 import { EditorToolbar } from '@/components/EditorToolbar'
+import { AgentStatusPanel } from '@/components/AgentStatusPanel'
 import { useSound } from '@/hooks/use-sound'
+import { useAgents, toOfficeAgentInfo } from '@/hooks/use-agents'
 import { ZOOM_DEFAULT_DPR_FACTOR, UNDO_STACK_MAX_SIZE, DEFAULT_FLOOR_COLOR, DEFAULT_WALL_COLOR } from '@/office/constants'
 import { EditTool, TileType, type OfficeLayout, type FloorColor, type AgentInfo } from '@/office/types'
 import { serializeLayout, deserializeLayout, createDefaultLayout } from '@/office/layout/layoutSerializer'
+import { AGENT_CONFIGS, type AgentRuntimeState } from '@/lib/agent-state'
+import type { AgentType } from '@/orchestrator/types'
 
 interface EditorState {
   activeTool: EditTool
@@ -49,15 +53,60 @@ export const OfficeView: React.FC = () => {
     redoStack: [],
   })
 
-  // Demo agents
-  const [agents, setAgents] = useState<AgentInfo[]>([
-    { id: 1, name: 'Pop', status: 'active', currentTool: 'Edit' },
-    { id: 2, name: 'Codex', status: 'active', currentTool: 'Read' },
-    { id: 3, name: 'Claude', status: 'idle' },
-    { id: 4, name: 'Quill', status: 'active', currentTool: 'Write' },
-    { id: 5, name: 'Echo', status: 'waiting' },
-    { id: 6, name: 'Scout', status: 'active', currentTool: 'Search' },
-  ])
+  // Fetch agents from API with real-time polling
+  const { agents: apiAgents, loading: agentsLoading } = useAgents({ pollInterval: 3000 })
+
+  // Convert API agents to office format with stable IDs based on agent type
+  const agents: AgentInfo[] = useMemo(() => {
+    if (apiAgents.length === 0) {
+      // Fallback to demo agents when API is not available
+      return [
+        { id: 1, name: 'Pop', status: 'active', currentTool: 'Edit' },
+        { id: 2, name: 'Codex', status: 'active', currentTool: 'Read' },
+        { id: 3, name: 'Claude', status: 'idle' },
+        { id: 4, name: 'Quill', status: 'active', currentTool: 'Write' },
+        { id: 5, name: 'Echo', status: 'waiting' },
+        { id: 6, name: 'Scout', status: 'active', currentTool: 'Search' },
+      ]
+    }
+
+    // Map API agents to office format with stable numeric IDs
+    const agentTypes = ['pop', 'codex', 'claude', 'quill', 'echo', 'scout', 'pixel'] as AgentType[]
+    return apiAgents.map((agent, index) => {
+      const typeIndex = agentTypes.indexOf(agent.type)
+      return {
+        id: typeIndex >= 0 ? typeIndex + 1 : index + 1,
+        name: agent.config?.name || agent.type,
+        status: agent.status === 'working' ? 'active' : 
+                agent.status === 'idle' ? 'idle' : 
+                agent.status === 'error' ? 'waiting' : 'idle',
+        currentTool: agent.currentTask || null,
+      }
+    })
+  }, [apiAgents])
+
+  // Agent mapping for status panel (maps numeric ID to agent type and state)
+  const agentMapping = useMemo(() => {
+    const map = new Map<number, { type: AgentType; state: AgentRuntimeState }>()
+    const agentTypes = ['pop', 'codex', 'claude', 'quill', 'echo', 'scout', 'pixel'] as AgentType[]
+    
+    apiAgents.forEach((agent) => {
+      const typeIndex = agentTypes.indexOf(agent.type)
+      const id = typeIndex >= 0 ? typeIndex + 1 : apiAgents.indexOf(agent) + 1
+      // Convert API agent state to AgentRuntimeState (convert lastActivity string to Date)
+      const runtimeState: AgentRuntimeState = {
+        type: agent.type,
+        status: agent.status,
+        currentTask: agent.currentTask,
+        lastActivity: agent.lastActivity ? new Date(agent.lastActivity) : undefined,
+        sessionCount: agent.sessionCount,
+        successRate: agent.successRate,
+      }
+      map.set(id, { type: agent.type, state: runtimeState })
+    })
+    
+    return map
+  }, [apiAgents])
 
   // Store last saved layout
   const lastSavedLayoutRef = useRef<OfficeLayout>(officeState.getLayout())
@@ -67,7 +116,7 @@ export const OfficeView: React.FC = () => {
     playClick()
     const agent = agents.find((a) => a.id === id)
     if (agent) {
-      console.log('Clicked agent:', agent.name)
+      console.log('Clicked agent:', agent.name, agent)
     }
   }, [agents, playClick])
 
@@ -214,30 +263,6 @@ export const OfficeView: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [handleUndo, handleRedo, handleSave])
 
-  // Simulate agent activity changes
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setAgents((prev) =>
-        prev.map((agent) => {
-          // Randomly change status
-          if (Math.random() < 0.1) {
-            const statuses: AgentInfo['status'][] = ['active', 'idle', 'waiting', 'complete']
-            const newStatus = statuses[Math.floor(Math.random() * statuses.length)]
-            const tools = ['Edit', 'Read', 'Write', 'Search', 'Bash', null]
-            return {
-              ...agent,
-              status: newStatus,
-              currentTool: newStatus === 'active' ? tools[Math.floor(Math.random() * tools.length)] : null,
-            }
-          }
-          return agent
-        })
-      )
-    }, 3000)
-
-    return () => clearInterval(interval)
-  }, [])
-
   return (
     <div
       style={{
@@ -379,58 +404,44 @@ export const OfficeView: React.FC = () => {
         </>
       )}
 
-      {/* Agent Status Panel */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 16,
-          right: 16,
-          background: 'rgba(40, 44, 52, 0.95)',
-          padding: 12,
-          borderRadius: 8,
-          border: '2px solid #444',
-          zIndex: 50,
-          minWidth: 180,
-        }}
-      >
-        <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>Agents</div>
-        {agents.map((agent) => (
+      {/* Enhanced Agent Status Panel */}
+      <AgentStatusPanel
+        selectedAgentId={officeState.selectedAgentId}
+        onAgentClick={handleAgentClick}
+        agentMapping={agentMapping}
+      />
+
+      {/* Connection Status Indicator */}
+      {agentsLoading && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 16,
+            left: 16,
+            background: 'rgba(40, 44, 52, 0.95)',
+            padding: '6px 12px',
+            borderRadius: 4,
+            border: '1px solid #444',
+            zIndex: 50,
+            fontSize: 11,
+            color: '#888',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
           <div
-            key={agent.id}
-            onClick={() => handleAgentClick(agent.id)}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '4px 8px',
-              marginBottom: 4,
-              background: officeState.selectedAgentId === agent.id ? 'rgba(0, 127, 212, 0.3)' : 'transparent',
-              borderRadius: 4,
-              cursor: 'pointer',
+              width: 6,
+              height: 6,
+              borderRadius: '50%',
+              background: '#44bb66',
+              animation: 'pulse 1s infinite',
             }}
-          >
-            <div
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: '50%',
-                background:
-                  agent.status === 'active'
-                    ? '#44bb66'
-                    : agent.status === 'waiting'
-                    ? '#ffaa00'
-                    : agent.status === 'complete'
-                    ? '#44aaff'
-                    : '#888',
-              }}
-            />
-            <span style={{ fontSize: 12, color: '#fff' }}>{agent.name}</span>
-            {agent.currentTool && (
-              <span style={{ fontSize: 10, color: '#888' }}>• {agent.currentTool}</span>
-            )}
-          </div>
-        ))}
-      </div>
+          />
+          连接中...
+        </div>
+      )}
     </div>
   )
 }

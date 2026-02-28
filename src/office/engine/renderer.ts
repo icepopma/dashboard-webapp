@@ -15,28 +15,7 @@ import {
   BUBBLE_FADE_DURATION_SEC,
   FALLBACK_FLOOR_COLOR,
   WALL_COLOR,
-  SEAT_OWN_COLOR,
-  SEAT_AVAILABLE_COLOR,
-  SEAT_BUSY_COLOR,
   GRID_LINE_COLOR,
-  VOID_TILE_OUTLINE_COLOR,
-  VOID_TILE_DASH_PATTERN,
-  GHOST_BORDER_HOVER_FILL,
-  GHOST_BORDER_HOVER_STROKE,
-  GHOST_BORDER_STROKE,
-  GHOST_PREVIEW_SPRITE_ALPHA,
-  GHOST_PREVIEW_TINT_ALPHA,
-  GHOST_VALID_TINT,
-  GHOST_INVALID_TINT,
-  SELECTION_HIGHLIGHT_COLOR,
-  SELECTION_DASH_PATTERN,
-  DELETE_BUTTON_BG,
-  ROTATE_BUTTON_BG,
-  BUTTON_MIN_RADIUS,
-  BUTTON_RADIUS_ZOOM_FACTOR,
-  BUTTON_ICON_SIZE_FACTOR,
-  BUTTON_LINE_WIDTH_MIN,
-  BUTTON_LINE_WIDTH_ZOOM_FACTOR,
 } from '../constants'
 
 export function renderTileGrid(
@@ -91,7 +70,8 @@ function hsbToHex(h: number, s: number, b: number): string {
   const r = Math.round(255 * f(5))
   const g = Math.round(255 * f(3))
   const bl = Math.round(255 * f(1))
-  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${bl.toString(16).padStart(2, '0')}`
+  const toHex = (n: number) => n.toString(16).padStart(2, '0')
+  return '#' + toHex(r) + toHex(g) + toHex(bl)
 }
 
 interface ZDrawable {
@@ -210,19 +190,115 @@ export function renderGridOverlay(
   const s = TILE_SIZE * zoom
   ctx.strokeStyle = GRID_LINE_COLOR
   ctx.lineWidth = 1
-  ctx.beginPath()
+
   for (let c = 0; c <= cols; c++) {
-    const x = offsetX + c * s + 0.5
-    ctx.moveTo(x, offsetY)
-    ctx.lineTo(x, offsetY + rows * s)
+    ctx.beginPath()
+    ctx.moveTo(offsetX + c * s, offsetY)
+    ctx.lineTo(offsetX + c * s, offsetY + rows * s)
+    ctx.stroke()
   }
+
   for (let r = 0; r <= rows; r++) {
-    const y = offsetY + r * s + 0.5
-    ctx.moveTo(offsetX, y)
-    ctx.lineTo(offsetX + cols * s, y)
+    ctx.beginPath()
+    ctx.moveTo(offsetX, offsetY + r * s)
+    ctx.lineTo(offsetX + cols * s, offsetY + r * s)
+    ctx.stroke()
   }
-  ctx.stroke()
 }
+
+// ── Agent Name Labels ───────────────────────────────────────────
+
+const LABEL_PADDING_X = 4
+const LABEL_PADDING_Y = 2
+const LABEL_OFFSET_Y = -4
+const LABEL_HEIGHT_ESTIMATE = 24
+
+export function renderAgentLabels(
+  ctx: CanvasRenderingContext2D,
+  characters: Character[],
+  offsetX: number,
+  offsetY: number,
+  zoom: number,
+  selectedAgentId: number | null,
+): void {
+  const fontSize = Math.max(8, Math.round(10 * Math.min(zoom, 2)))
+  ctx.font = '500 ' + fontSize + 'px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'bottom'
+
+  for (const ch of characters) {
+    if (ch.matrixEffect === 'despawn') continue
+
+    const sittingOffset = ch.state === 'type' ? CHARACTER_SITTING_OFFSET_PX : 0
+    const screenX = offsetX + ch.x * zoom
+    const screenY = offsetY + (ch.y + sittingOffset) * zoom - LABEL_HEIGHT_ESTIMATE * zoom - LABEL_OFFSET_Y * zoom
+
+    // Determine label style based on state
+    const isActive = ch.isActive || ch.state === 'type'
+    const isSelected = selectedAgentId === ch.id
+    
+    // Draw name background
+    const name = ch.name || 'Agent'
+    const textWidth = ctx.measureText(name).width
+    const bgWidth = textWidth + LABEL_PADDING_X * 2 * zoom
+    const bgHeight = fontSize + LABEL_PADDING_Y * 2 * zoom
+    const bgX = screenX - bgWidth / 2
+    const bgY = screenY - bgHeight
+
+    // Background
+    ctx.fillStyle = isSelected 
+      ? 'rgba(0, 127, 212, 0.9)' 
+      : isActive 
+        ? 'rgba(40, 44, 52, 0.85)' 
+        : 'rgba(60, 60, 60, 0.7)'
+    
+    // Rounded rectangle
+    const radius = 3 * zoom
+    ctx.beginPath()
+    ctx.moveTo(bgX + radius, bgY)
+    ctx.lineTo(bgX + bgWidth - radius, bgY)
+    ctx.quadraticCurveTo(bgX + bgWidth, bgY, bgX + bgWidth, bgY + radius)
+    ctx.lineTo(bgX + bgWidth, bgY + bgHeight - radius)
+    ctx.quadraticCurveTo(bgX + bgWidth, bgY + bgHeight, bgX + bgWidth - radius, bgY + bgHeight)
+    ctx.lineTo(bgX + radius, bgY + bgHeight)
+    ctx.quadraticCurveTo(bgX, bgY + bgHeight, bgX, bgY + bgHeight - radius)
+    ctx.lineTo(bgX, bgY + radius)
+    ctx.quadraticCurveTo(bgX, bgY, bgX + radius, bgY)
+    ctx.closePath()
+    ctx.fill()
+
+    // Border
+    if (isSelected) {
+      ctx.strokeStyle = '#007fd4'
+      ctx.lineWidth = 2
+      ctx.stroke()
+    }
+
+    // Name text
+    ctx.fillStyle = '#ffffff'
+    ctx.fillText(name, screenX, screenY - LABEL_PADDING_Y * zoom)
+
+    // Status indicator dot
+    const dotRadius = 3 * zoom
+    const dotX = screenX + textWidth / 2 + LABEL_PADDING_X * zoom + dotRadius + 2 * zoom
+    const dotY = screenY - bgHeight / 2
+    
+    ctx.beginPath()
+    ctx.arc(dotX, dotY, dotRadius, 0, Math.PI * 2)
+    ctx.fillStyle = isActive ? '#44bb66' : '#888888'
+    ctx.fill()
+    
+    // Glow effect for active agents
+    if (isActive) {
+      ctx.beginPath()
+      ctx.arc(dotX, dotY, dotRadius + 2 * zoom, 0, Math.PI * 2)
+      ctx.fillStyle = 'rgba(68, 187, 102, 0.3)'
+      ctx.fill()
+    }
+  }
+}
+
+// ── Render Full Frame ───────────────────────────────────────────
 
 export function renderFrame(
   ctx: CanvasRenderingContext2D,
@@ -234,75 +310,26 @@ export function renderFrame(
   zoom: number,
   panX: number,
   panY: number,
-  selectedAgentId: number | null = null,
-  hoveredAgentId: number | null = null,
+  selectedAgentId: number | null,
+  hoveredAgentId: number | null,
   tileColors?: Array<FloorColor | null>,
-  layoutCols?: number,
-  layoutRows?: number,
-  showGrid = false,
-): { offsetX: number; offsetY: number } {
+  cols?: number,
+  rows?: number,
+): void {
+  const layoutCols = cols ?? (tileMap.length > 0 ? tileMap[0].length : 0)
+  const layoutRows = rows ?? tileMap.length
+
+  const mapW = layoutCols * TILE_SIZE * zoom
+  const mapH = layoutRows * TILE_SIZE * zoom
+  const offsetX = (canvasWidth - mapW) / 2 + panX
+  const offsetY = (canvasHeight - mapH) / 2 + panY
+
+  // Clear canvas
   ctx.clearRect(0, 0, canvasWidth, canvasHeight)
 
-  const cols = layoutCols ?? (tileMap.length > 0 ? tileMap[0].length : 0)
-  const rows = layoutRows ?? tileMap.length
-
-  const mapW = cols * TILE_SIZE * zoom
-  const mapH = rows * TILE_SIZE * zoom
-  const offsetX = Math.floor((canvasWidth - mapW) / 2) + Math.round(panX)
-  const offsetY = Math.floor((canvasHeight - mapH) / 2) + Math.round(panY)
-
+  // Render layers in order
   renderTileGrid(ctx, tileMap, offsetX, offsetY, zoom, tileColors, layoutCols)
   renderScene(ctx, furniture, characters, offsetX, offsetY, zoom, selectedAgentId, hoveredAgentId)
   renderBubbles(ctx, characters, offsetX, offsetY, zoom)
-
-  if (showGrid) {
-    renderGridOverlay(ctx, offsetX, offsetY, zoom, cols, rows)
-  }
-
-  return { offsetX, offsetY }
-}
-
-export interface ButtonBounds {
-  cx: number
-  cy: number
-  radius: number
-}
-
-export type DeleteButtonBounds = ButtonBounds
-export type RotateButtonBounds = ButtonBounds
-
-export function renderDeleteButton(
-  ctx: CanvasRenderingContext2D,
-  col: number,
-  row: number,
-  w: number,
-  _h: number,
-  offsetX: number,
-  offsetY: number,
-  zoom: number,
-): DeleteButtonBounds {
-  const s = TILE_SIZE * zoom
-  const cx = offsetX + (col + w) * s + 1
-  const cy = offsetY + row * s - 1
-  const radius = Math.max(BUTTON_MIN_RADIUS, zoom * BUTTON_RADIUS_ZOOM_FACTOR)
-
-  ctx.save()
-  ctx.beginPath()
-  ctx.arc(cx, cy, radius, 0, Math.PI * 2)
-  ctx.fillStyle = DELETE_BUTTON_BG
-  ctx.fill()
-
-  ctx.strokeStyle = '#fff'
-  ctx.lineWidth = Math.max(BUTTON_LINE_WIDTH_MIN, zoom * BUTTON_LINE_WIDTH_ZOOM_FACTOR)
-  ctx.lineCap = 'round'
-  const xSize = radius * BUTTON_ICON_SIZE_FACTOR
-  ctx.beginPath()
-  ctx.moveTo(cx - xSize, cy - xSize)
-  ctx.lineTo(cx + xSize, cy + xSize)
-  ctx.moveTo(cx + xSize, cy - xSize)
-  ctx.lineTo(cx - xSize, cy + xSize)
-  ctx.stroke()
-  ctx.restore()
-
-  return { cx, cy, radius }
+  renderAgentLabels(ctx, characters, offsetX, offsetY, zoom, selectedAgentId)
 }
