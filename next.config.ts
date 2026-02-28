@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   
   // Allow dev access from any origin (for remote access)
-  allowedDevOrigins: ['43.162.106.240', 'localhost'],
+  allowedDevOrigins: ['43.134.54.87', '43.162.106.240', 'localhost'],
   
   // Optimize images
   images: {
