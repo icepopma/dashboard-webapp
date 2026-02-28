@@ -20,6 +20,13 @@ export function selectAgent(
 ): AgentType {
   const { type, area, estimatedComplexity } = analysis
   
+  // 开发类任务类型
+  const DEV_TASK_TYPES = ['feature', 'bugfix', 'refactor', 'test']
+  const isDevTask = DEV_TASK_TYPES.includes(type)
+  
+  // 开发专家 agent
+  const DEV_AGENTS = new Set(['codex', 'claude'])
+  
   // 计算每个智能体的适配分数
   const scores: Array<{ agent: AgentType; score: number }> = []
   
@@ -33,6 +40,15 @@ export function selectAgent(
         score += 100  // 专业 agent 优先
       } else {
         score += 50   // 通用 agent
+      }
+    }
+    
+    // 开发类任务：开发专家额外加分，协调者(Pop)降分
+    if (isDevTask) {
+      if (DEV_AGENTS.has(agentName)) {
+        score += 30  // 开发专家优先
+      } else if (agentName === 'pop') {
+        score -= 20  // Pop 是协调者，开发任务降优先级
       }
     }
     
