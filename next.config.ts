@@ -26,9 +26,6 @@ const nextConfig: NextConfig = {
     removeConsole: process.env.NODE_ENV === 'production',
   },
   
-  // Empty turbopack config for Next.js 16 compatibility
-  turbopack: {},
-  
   // Headers for caching
   async headers() {
     return [
