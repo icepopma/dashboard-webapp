@@ -26,13 +26,18 @@ export function selectAgent(
   for (const [agentName, config] of Object.entries(configs) as [AgentType, AgentCapability][]) {
     let score = 0
     
-    // 能力匹配
+    // 能力匹配 - 专业 agent 大幅加分
     if (config.capabilities.includes(type)) {
-      score += 50
+      // 如果只有一个能力（专业 agent），加更多分
+      if (config.capabilities.length === 1) {
+        score += 100  // 专业 agent 优先
+      } else {
+        score += 50   // 通用 agent
+      }
     }
     
-    // 成功率加成
-    score += config.successRate * 30
+    // 成功率加成（降低权重，避免通用 agent 总是赢）
+    score += config.successRate * 10
     
     // 领域特定加成
     score += getAreaBonus(agentName, area)

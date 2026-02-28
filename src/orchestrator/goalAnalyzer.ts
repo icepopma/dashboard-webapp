@@ -68,32 +68,32 @@ function inferTaskType(goal: string, keywords: string[]): TaskType {
   const goalLower = goal.toLowerCase()
   
   // Bug 修复
-  if (/\b(bug|fix|error|crash|broken|issue|问题|修复|错误)\b/.test(goalLower)) {
+  if (/(bug|fix|error|crash|broken|issue|问题|修复|错误)/i.test(goalLower)) {
     return 'bugfix'
   }
   
   // 重构
-  if (/\b(refactor|cleanup|optimize|improve|重构|优化|清理)\b/.test(goalLower)) {
+  if (/(refactor|cleanup|optimize|improve|重构|优化|清理)/i.test(goalLower)) {
     return 'refactor'
   }
   
   // 文档
-  if (/\b(doc|documentation|readme|comment|文档|说明|注释)\b/.test(goalLower)) {
+  if (/(doc|documentation|readme|comment|blog|article|write|writing|文档|说明|注释|博客|文章|写|撰写)/i.test(goalLower)) {
     return 'docs'
   }
   
   // 测试
-  if (/\b(test|testing|spec|测试)\b/.test(goalLower)) {
+  if (/(test|testing|spec|测试)/i.test(goalLower)) {
     return 'test'
   }
   
   // 设计
-  if (/\b(design|ui|ux|style|css|设计|样式)\b/.test(goalLower)) {
+  if (/(design|ui|ux|style|css|像素|设计|样式|界面)/i.test(goalLower)) {
     return 'design'
   }
   
   // 分析
-  if (/\b(analyze|analysis|research|investigate|分析|研究|调查)\b/.test(goalLower)) {
+  if (/(analyze|analysis|research|investigate|分析|研究|调查)/i.test(goalLower)) {
     return 'analysis'
   }
   
