@@ -58,7 +58,7 @@ export const OfficeView: React.FC = () => {
 
   // Convert API agents to office format with stable IDs based on agent type
   const agents: AgentInfo[] = useMemo(() => {
-    if (apiAgents.length === 0) {
+    if (!apiAgents || apiAgents.length === 0) {
       // Fallback to demo agents when API is not available
       return [
         { id: 1, name: 'Pop', status: 'active', currentTool: 'Edit' },
