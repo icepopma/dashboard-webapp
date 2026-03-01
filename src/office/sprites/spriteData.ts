@@ -257,6 +257,160 @@ export const BUBBLE_WAITING_SPRITE: SpriteData = (() => {
   ]
 })()
 
+// ── New Furniture Sprites (Multi-Area Layout) ─────────────────────
+
+export const WHITEBOARD_SPRITE: SpriteData = (() => {
+  const F = '#FFFFFF'
+  const B = '#8B4513'
+  const _ = ''
+  return [
+    [B, B, B, B, B, B, B, B],
+    [B, F, F, F, F, F, F, B],
+    [B, F, F, F, F, F, F, B],
+    [B, F, F, F, F, F, F, B],
+    [B, F, F, F, F, F, F, B],
+    [B, B, B, B, B, B, B, B],
+  ]
+})()
+
+export const SOFA_SPRITE: SpriteData = (() => {
+  const B = '#8B4513'
+  const R = '#D2691E'
+  const C = '#DEB887'
+  const _ = ''
+  return [
+    [_, B, B, B, B, B, B, _],
+    [B, C, C, C, C, C, C, B],
+    [B, C, C, C, C, C, C, B],
+    [B, R, R, R, R, R, R, B],
+    [B, R, R, R, R, R, R, B],
+  ]
+})()
+
+export const TV_SPRITE: SpriteData = (() => {
+  const B = '#333333'
+  const S = '#1a1a1a'
+  const G = '#4488ff'
+  const _ = ''
+  return [
+    [B, B, B, B, B, B, B, B],
+    [B, S, S, S, S, S, S, B],
+    [B, S, G, G, G, G, S, B],
+    [B, S, G, G, G, G, S, B],
+    [B, S, S, S, S, S, S, B],
+    [B, B, B, B, B, B, B, B],
+    [_, _, _, B, B, _, _, _],
+  ]
+})()
+
+export const BEANBAG_SPRITE: SpriteData = (() => {
+  const P = '#9370DB'
+  const D = '#6B238E'
+  const _ = ''
+  return [
+    [_, D, D, D, _],
+    [D, P, P, P, D],
+    [D, P, P, P, D],
+    [D, P, P, P, D],
+    [_, D, D, D, _],
+  ]
+})()
+
+export const COFFEE_MACHINE_SPRITE: SpriteData = (() => {
+  const G = '#808080'
+  const D = '#404040'
+  const B = '#2F2F2F'
+  const R = '#8B0000'
+  const _ = ''
+  return [
+    [G, G, G, G],
+    [D, B, B, D],
+    [D, B, R, D],
+    [D, D, D, D],
+  ]
+})()
+
+export const DINING_TABLE_SPRITE: SpriteData = (() => {
+  const W = '#DEB887'
+  const B = '#8B4513'
+  const _ = ''
+  return [
+    [_, B, B, B, B, B, _],
+    [B, W, W, W, W, W, B],
+    [B, W, W, W, W, W, B],
+    [B, W, W, W, W, W, B],
+    [B, W, W, W, W, W, B],
+    [_, B, B, B, B, B, _],
+  ]
+})()
+
+export const FRIDGE_SPRITE: SpriteData = (() => {
+  const S = '#C0C0C0'
+  const D = '#808080'
+  const H = '#404040'
+  const _ = ''
+  return [
+    [D, D, D, D],
+    [S, S, S, S],
+    [S, S, H, S],
+    [S, S, S, S],
+    [S, S, H, S],
+    [D, D, D, D],
+  ]
+})()
+
+export const MICROWAVE_SPRITE: SpriteData = (() => {
+  const S = '#C0C0C0'
+  const D = '#404040'
+  const G = '#333333'
+  const _ = ''
+  return [
+    [S, S, S, S, S],
+    [S, G, G, G, S],
+    [S, G, G, G, S],
+    [S, D, D, D, S],
+    [S, S, S, S, S],
+  ]
+})()
+
+export const TREADMILL_SPRITE: SpriteData = (() => {
+  const G = '#404040'
+  const B = '#1a1a1a'
+  const R = '#C0C0C0'
+  const _ = ''
+  return [
+    [G, G, G, G, G, G],
+    [B, R, R, R, R, B],
+    [B, R, R, R, R, B],
+    [B, R, R, R, R, B],
+    [G, G, G, G, G, G],
+  ]
+})()
+
+export const DUMBBELL_RACK_SPRITE: SpriteData = (() => {
+  const G = '#404040'
+  const B = '#1a1a1a'
+  const W = '#C0C0C0'
+  const _ = ''
+  return [
+    [G, G, G, G, G],
+    [B, W, B, W, B],
+    [B, W, B, W, B],
+    [G, G, G, G, G],
+  ]
+})()
+
+export const YOGA_MAT_SPRITE: SpriteData = (() => {
+  const B = '#4169E1'
+  const _ = ''
+  return [
+    [B, B, B, B, B],
+    [B, B, B, B, B],
+    [B, B, B, B, B],
+    [B, B, B, B, B],
+  ]
+})()
+
 // ── Character Palettes ───────────────────────────────────────────
 
 /** Palette colors for 6 distinct agent characters */
@@ -1002,6 +1156,106 @@ export const FURNITURE_CATALOG: Record<string, FurnitureCatalogEntry> = {
     isDesk: false,
     category: 'decor',
     canPlaceOnSurfaces: true,
+  },
+  // ── New Furniture (Multi-Area Layout) ─────────────────────
+  whiteboard: {
+    type: 'whiteboard',
+    label: 'Whiteboard',
+    footprintW: 2,
+    footprintH: 1,
+    sprite: WHITEBOARD_SPRITE,
+    isDesk: false,
+    category: 'office',
+  },
+  sofa: {
+    type: 'sofa',
+    label: 'Sofa',
+    footprintW: 2,
+    footprintH: 1,
+    sprite: SOFA_SPRITE,
+    isDesk: false,
+    category: 'seating',
+  },
+  tv: {
+    type: 'tv',
+    label: 'TV',
+    footprintW: 2,
+    footprintH: 1,
+    sprite: TV_SPRITE,
+    isDesk: false,
+    category: 'electronics',
+  },
+  beanbag: {
+    type: 'beanbag',
+    label: 'Bean Bag',
+    footprintW: 1,
+    footprintH: 1,
+    sprite: BEANBAG_SPRITE,
+    isDesk: false,
+    category: 'seating',
+  },
+  coffee_machine: {
+    type: 'coffee_machine',
+    label: 'Coffee Machine',
+    footprintW: 1,
+    footprintH: 1,
+    sprite: COFFEE_MACHINE_SPRITE,
+    isDesk: false,
+    category: 'kitchen',
+  },
+  dining_table: {
+    type: 'dining_table',
+    label: 'Dining Table',
+    footprintW: 2,
+    footprintH: 2,
+    sprite: DINING_TABLE_SPRITE,
+    isDesk: false,
+    category: 'kitchen',
+  },
+  fridge: {
+    type: 'fridge',
+    label: 'Fridge',
+    footprintW: 1,
+    footprintH: 1,
+    sprite: FRIDGE_SPRITE,
+    isDesk: false,
+    category: 'kitchen',
+  },
+  microwave: {
+    type: 'microwave',
+    label: 'Microwave',
+    footprintW: 1,
+    footprintH: 1,
+    sprite: MICROWAVE_SPRITE,
+    isDesk: false,
+    category: 'kitchen',
+  },
+  treadmill: {
+    type: 'treadmill',
+    label: 'Treadmill',
+    footprintW: 2,
+    footprintH: 1,
+    sprite: TREADMILL_SPRITE,
+    isDesk: false,
+    category: 'gym',
+  },
+  dumbbell_rack: {
+    type: 'dumbbell_rack',
+    label: 'Dumbbell Rack',
+    footprintW: 1,
+    footprintH: 1,
+    sprite: DUMBBELL_RACK_SPRITE,
+    isDesk: false,
+    category: 'gym',
+  },
+  yoga_mat: {
+    type: 'yoga_mat',
+    label: 'Yoga Mat',
+    footprintW: 1,
+    footprintH: 1,
+    sprite: YOGA_MAT_SPRITE,
+    isDesk: false,
+    category: 'gym',
   },
 }
 

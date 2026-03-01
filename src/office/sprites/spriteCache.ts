@@ -4,6 +4,20 @@ const spriteCanvasCache = new Map<string, HTMLCanvasElement>()
 
 /** Convert SpriteData to a cached canvas at a given zoom level */
 export function getCachedSprite(sprite: SpriteData, zoom: number): HTMLCanvasElement {
+  // Handle null/undefined sprite
+  if (!sprite || !sprite.length || !sprite[0]?.length) {
+    // Return a 1x1 transparent placeholder
+    const key = `empty-${zoom}`
+    const cached = spriteCanvasCache.get(key)
+    if (cached) return cached
+    
+    const canvas = document.createElement('canvas')
+    canvas.width = zoom
+    canvas.height = zoom
+    spriteCanvasCache.set(key, canvas)
+    return canvas
+  }
+
   const key = `${sprite.length}-${sprite[0]?.length || 0}-${zoom}-${hashSprite(sprite)}`
   const cached = spriteCanvasCache.get(key)
   if (cached) return cached
