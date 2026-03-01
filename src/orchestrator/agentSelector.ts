@@ -4,6 +4,7 @@
 
 import type { TaskType, AgentType } from './types'
 import type { GoalAnalysis } from './goalAnalyzer'
+import { getAgentModelConfig, type ModelTier } from './modelRouter'
 
 interface AgentCapability {
   name: string
@@ -100,13 +101,37 @@ function getComplexityBonus(agent: AgentType, complexity: 'low' | 'medium' | 'hi
 }
 
 /**
- * 获取智能体的推荐配置
+ * 获取智能体的推荐配置（带模型路由）
+ * @param agent - 智能体类型
+ * @param goal - 用户目标（用于模型路由）
+ * @param taskType - 任务类型
  */
-export function getAgentConfig(agent: AgentType): {
+export function getAgentConfig(
+  agent: AgentType,
+  goal?: string,
+  taskType?: TaskType
+): {
   command: string
   model: string
   args: string[]
+  tier?: ModelTier
+  costSavings?: number
+  routingReasoning?: string
 } {
+  // 如果有 goal 和 taskType，使用智能路由
+  if (goal && taskType) {
+    const routing = getAgentModelConfig(agent, goal, taskType)
+    return {
+      command: routing.command,
+      model: routing.model,
+      args: routing.args,
+      tier: routing.tier,
+      costSavings: routing.costSavings,
+      routingReasoning: routing.reasoning,
+    }
+  }
+
+  // 回退到固定配置（向后兼容）
   const configs: Record<AgentType, { command: string; model: string; args: string[] }> = {
     pop: {
       command: 'openclaw',
@@ -144,6 +169,6 @@ export function getAgentConfig(agent: AgentType): {
       args: ['--model', 'claude-sonnet-4', '--dangerously-skip-permissions'],
     },
   }
-  
+
   return configs[agent]
 }
