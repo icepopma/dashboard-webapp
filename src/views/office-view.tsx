@@ -88,8 +88,9 @@ export const OfficeView: React.FC = () => {
   // Agent mapping for status panel (maps numeric ID to agent type and state)
   const agentMapping = useMemo(() => {
     const map = new Map<number, { type: AgentType; state: AgentRuntimeState }>()
+    if (!apiAgents) return map
     const agentTypes = ['pop', 'codex', 'claude', 'quill', 'echo', 'scout', 'pixel'] as AgentType[]
-    
+
     apiAgents.forEach((agent) => {
       const typeIndex = agentTypes.indexOf(agent.type)
       const id = typeIndex >= 0 ? typeIndex + 1 : apiAgents.indexOf(agent) + 1
