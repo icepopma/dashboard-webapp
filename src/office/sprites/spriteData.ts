@@ -7,35 +7,24 @@ const _ = '' // transparent
 
 /** Square desk: 32x32 pixels (2x2 tiles) */
 export const DESK_SQUARE_SPRITE: SpriteData = (() => {
+  // Smaller desk (20x16) to fit better in office
   const W = '#8B6914'
   const L = '#A07828'
   const S = '#B8922E'
   const D = '#6B4E0A'
-  const rows: string[][] = []
-  rows.push(new Array(32).fill(_))
-  rows.push([_, ...new Array(30).fill(W), _])
-  for (let r = 0; r < 4; r++) {
-    rows.push([_, W, ...new Array(28).fill(r < 1 ? L : S), W, _])
-  }
-  rows.push([_, D, ...new Array(28).fill(W), D, _])
-  for (let r = 0; r < 6; r++) {
-    rows.push([_, W, ...new Array(28).fill(S), W, _])
-  }
-  rows.push([_, W, ...new Array(28).fill(L), W, _])
-  for (let r = 0; r < 6; r++) {
-    rows.push([_, W, ...new Array(28).fill(S), W, _])
-  }
-  rows.push([_, D, ...new Array(28).fill(W), D, _])
-  for (let r = 0; r < 4; r++) {
-    rows.push([_, W, ...new Array(28).fill(r > 2 ? L : S), W, _])
-  }
-  rows.push([_, ...new Array(30).fill(W), _])
-  for (let r = 0; r < 6; r++) {
-    const row = new Array(32).fill(_) as string[]
-    row[1] = D; row[2] = D; row[29] = D; row[30] = D
-    rows.push(row)
-  }
-  return rows
+  const _ = ''
+  return [
+    [_, _, W, W, W, W, W, W, W, W, W, W, _, _, _, _],
+    [_, W, L, L, L, L, L, L, L, L, L, L, W, _, _, _],
+    [_, W, S, S, S, S, S, S, S, S, S, S, W, _, _, _],
+    [_, W, S, S, S, S, S, S, S, S, S, S, W, D, D, _],
+    [_, W, S, S, S, S, S, S, S, S, S, S, W, D, D, _],
+    [_, W, S, S, S, S, S, S, S, S, S, S, W, _, _, _],
+    [_, W, W, W, W, W, W, W, W, W, W, W, W, _, _, _],
+    [_, _, D, _, _, _, _, _, _, _, _, D, _, _, _, _],
+    [_, _, D, _, _, _, _, _, _, _, _, D, _, _, _, _],
+    [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
+  ]
 })()
 
 /** Plant in pot: 16x24 */
@@ -128,26 +117,48 @@ export const CHAIR_SPRITE: SpriteData = (() => {
 
 /** PC monitor: 16x16 */
 export const PC_SPRITE: SpriteData = (() => {
-  const F = '#555555'
-  const S = '#3A3A5C'
-  const B = '#6688CC'
-  const D = '#444444'
+  // PC monitor (small, to sit on desk)
+  const B = '#333333'
+  const S = '#1a1a1a'
+  const G = '#4488ff'
+  const _ = ''
   return [
-    [_, _, _, F, F, F, F, F, F, F, F, F, F, _, _, _],
-    [_, _, _, F, S, S, S, S, S, S, S, S, F, _, _, _],
-    [_, _, _, F, S, B, B, B, B, B, B, S, F, _, _, _],
-    [_, _, _, F, S, B, B, B, B, B, B, S, F, _, _, _],
-    [_, _, _, F, S, B, B, B, B, B, B, S, F, _, _, _],
-    [_, _, _, F, S, B, B, B, B, B, B, S, F, _, _, _],
-    [_, _, _, F, S, B, B, B, B, B, B, S, F, _, _, _],
-    [_, _, _, F, S, B, B, B, B, B, B, S, F, _, _, _],
-    [_, _, _, F, S, S, S, S, S, S, S, S, F, _, _, _],
-    [_, _, _, F, F, F, F, F, F, F, F, F, F, _, _, _],
-    [_, _, _, _, _, _, _, D, D, _, _, _, _, _, _, _],
-    [_, _, _, _, _, _, _, D, D, _, _, _, _, _, _, _],
-    [_, _, _, _, _, _, D, D, D, D, _, _, _, _, _, _],
-    [_, _, _, _, _, D, D, D, D, D, D, _, _, _, _, _],
-    [_, _, _, _, _, D, D, D, D, D, D, _, _, _, _, _],
+    [_, B, B, B, B, B, B, _],
+    [B, S, S, S, S, S, S, B],
+    [B, S, G, G, G, G, S, B],
+    [B, S, G, G, G, G, S, B],
+    [B, S, S, S, S, S, S, B],
+    [B, B, B, B, B, B, B, B],
+    [_, _, _, B, B, _, _, _],
+    [_, _, _, B, B, _, _, _],
+  ]
+})()
+
+// Desk with PC on it (combined sprite)
+export const DESK_WITH_PC_SPRITE: SpriteData = (() => {
+  const W = '#8B6914'
+  const L = '#A07828'
+  const S = '#B8922E'
+  const D = '#6B4E0A'
+  const B = '#333333'
+  const M = '#1a1a1a'
+  const G = '#4488ff'
+  const _ = ''
+  return [
+    [_, _, _, _, B, B, B, B, B, B, B, _, _, _, _, _],
+    [_, _, B, M, M, M, M, M, M, M, B, _, _, _, _, _],
+    [_, _, B, M, G, G, G, G, G, M, B, _, _, _, _, _],
+    [_, _, B, M, G, G, G, G, G, M, B, _, _, _, _, _],
+    [_, _, B, B, B, B, B, B, B, B, B, _, _, _, _, _],
+    [_, _, _, _, _, B, B, _, _, _, _, _, _, _, _, _],
+    [_, _, W, W, W, W, W, W, W, W, W, W, _, _, _, _],
+    [_, W, L, L, L, L, L, L, L, L, L, L, W, _, _, _],
+    [_, W, S, S, S, S, S, S, S, S, S, S, W, D, D, _],
+    [_, W, W, W, W, W, W, W, W, W, W, W, W, D, D, _],
+    [_, _, D, _, _, _, _, _, _, _, _, D, _, _, _, _],
+    [_, _, D, _, _, _, _, _, _, _, _, D, _, _, _, _],
+  ]
+})()
     [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
   ]
 })()
@@ -274,59 +285,65 @@ export const WHITEBOARD_SPRITE: SpriteData = (() => {
 })()
 
 export const SOFA_SPRITE: SpriteData = (() => {
-  const B = '#8B4513'
-  const R = '#D2691E'
+  const B = '#5D3A1A'
+  const R = '#8B4513'
   const C = '#DEB887'
   const _ = ''
   return [
-    [_, B, B, B, B, B, B, _],
-    [B, C, C, C, C, C, C, B],
-    [B, C, C, C, C, C, C, B],
-    [B, R, R, R, R, R, R, B],
-    [B, R, R, R, R, R, R, B],
+    [B, B, B, B, B, B, B, B, B, B, B, B],
+    [B, C, C, C, C, C, C, C, C, C, C, B],
+    [B, C, C, C, C, C, C, C, C, C, C, B],
+    [B, C, C, C, C, C, C, C, C, C, C, B],
+    [B, R, R, R, R, R, R, R, R, R, R, B],
+    [B, R, R, R, R, R, R, R, R, R, R, B],
+    [B, B, B, B, B, B, B, B, B, B, B, B],
   ]
 })()
 
 export const TV_SPRITE: SpriteData = (() => {
-  const B = '#333333'
-  const S = '#1a1a1a'
+  const B = '#1a1a1a'
+  const S = '#0a0a0a'
   const G = '#4488ff'
   const _ = ''
   return [
-    [B, B, B, B, B, B, B, B],
-    [B, S, S, S, S, S, S, B],
-    [B, S, G, G, G, G, S, B],
-    [B, S, G, G, G, G, S, B],
-    [B, S, S, S, S, S, S, B],
-    [B, B, B, B, B, B, B, B],
-    [_, _, _, B, B, _, _, _],
+    [B, B, B, B, B, B, B, B, B, B, B, B],
+    [B, S, S, S, S, S, S, S, S, S, S, B],
+    [B, S, G, G, G, G, G, G, G, G, S, B],
+    [B, S, G, G, G, G, G, G, G, G, S, B],
+    [B, S, G, G, G, G, G, G, G, G, S, B],
+    [B, S, S, S, S, S, S, S, S, S, S, B],
+    [B, B, B, B, B, B, B, B, B, B, B, B],
+    [_, _, _, _, B, B, B, B, _, _, _, _],
   ]
 })()
 
 export const BEANBAG_SPRITE: SpriteData = (() => {
-  const P = '#9370DB'
-  const D = '#6B238E'
+  const P = '#8B008B'
+  const D = '#4B0082'
   const _ = ''
   return [
-    [_, D, D, D, _],
-    [D, P, P, P, D],
-    [D, P, P, P, D],
-    [D, P, P, P, D],
-    [_, D, D, D, _],
+    [_, _, D, D, D, D, _, _],
+    [_, D, P, P, P, P, D, _],
+    [D, P, P, P, P, P, P, D],
+    [D, P, P, P, P, P, P, D],
+    [D, P, P, P, P, P, P, D],
+    [_, D, D, D, D, D, D, _],
   ]
 })()
 
 export const COFFEE_MACHINE_SPRITE: SpriteData = (() => {
-  const G = '#808080'
-  const D = '#404040'
-  const B = '#2F2F2F'
+  const G = '#404040'
+  const D = '#202020'
+  const B = '#1a1a1a'
   const R = '#8B0000'
+  const O = '#FF4500'
   const _ = ''
   return [
-    [G, G, G, G],
-    [D, B, B, D],
-    [D, B, R, D],
-    [D, D, D, D],
+    [G, G, G, G, G, G],
+    [D, B, B, B, B, D],
+    [D, B, R, R, B, D],
+    [D, B, B, O, B, D],
+    [D, D, D, D, D, D],
   ]
 })()
 
@@ -335,27 +352,29 @@ export const DINING_TABLE_SPRITE: SpriteData = (() => {
   const B = '#8B4513'
   const _ = ''
   return [
-    [_, B, B, B, B, B, _],
-    [B, W, W, W, W, W, B],
-    [B, W, W, W, W, W, B],
-    [B, W, W, W, W, W, B],
-    [B, W, W, W, W, W, B],
-    [_, B, B, B, B, B, _],
+    [_, B, B, B, B, B, B, B, _],
+    [B, W, W, W, W, W, W, W, B],
+    [B, W, W, W, W, W, W, W, B],
+    [B, W, W, W, W, W, W, W, B],
+    [B, W, W, W, W, W, W, W, B],
+    [B, W, W, W, W, W, W, W, B],
+    [_, B, B, B, B, B, B, B, _],
   ]
 })()
 
 export const FRIDGE_SPRITE: SpriteData = (() => {
-  const S = '#C0C0C0'
-  const D = '#808080'
+  const S = '#E8E8E8'
+  const D = '#A0A0A0'
   const H = '#404040'
   const _ = ''
   return [
-    [D, D, D, D],
-    [S, S, S, S],
-    [S, S, H, S],
-    [S, S, S, S],
-    [S, S, H, S],
-    [D, D, D, D],
+    [D, D, D, D, D, D],
+    [S, S, S, S, S, S],
+    [S, S, S, S, H, S],
+    [S, S, S, S, S, S],
+    [S, S, S, S, H, S],
+    [S, S, S, S, S, S],
+    [D, D, D, D, D, D],
   ]
 })()
 
@@ -363,13 +382,14 @@ export const MICROWAVE_SPRITE: SpriteData = (() => {
   const S = '#C0C0C0'
   const D = '#404040'
   const G = '#333333'
+  const L = '#00FF00'
   const _ = ''
   return [
-    [S, S, S, S, S],
-    [S, G, G, G, S],
-    [S, G, G, G, S],
-    [S, D, D, D, S],
-    [S, S, S, S, S],
+    [S, S, S, S, S, S],
+    [S, G, G, G, G, S],
+    [S, G, G, G, G, S],
+    [S, D, L, D, D, S],
+    [S, S, S, S, S, S],
   ]
 })()
 
@@ -379,11 +399,12 @@ export const TREADMILL_SPRITE: SpriteData = (() => {
   const R = '#C0C0C0'
   const _ = ''
   return [
-    [G, G, G, G, G, G],
-    [B, R, R, R, R, B],
-    [B, R, R, R, R, B],
-    [B, R, R, R, R, B],
-    [G, G, G, G, G, G],
+    [G, G, G, G, G, G, G, G],
+    [B, R, R, R, R, R, R, B],
+    [B, R, R, R, R, R, R, B],
+    [B, R, R, R, R, R, R, B],
+    [B, R, R, R, R, R, R, B],
+    [G, G, G, G, G, G, G, G],
   ]
 })()
 
@@ -393,21 +414,23 @@ export const DUMBBELL_RACK_SPRITE: SpriteData = (() => {
   const W = '#C0C0C0'
   const _ = ''
   return [
-    [G, G, G, G, G],
-    [B, W, B, W, B],
-    [B, W, B, W, B],
-    [G, G, G, G, G],
+    [G, G, G, G, G, G],
+    [B, W, W, W, W, B],
+    [B, W, W, W, W, B],
+    [B, W, W, W, W, B],
+    [G, G, G, G, G, G],
   ]
 })()
 
 export const YOGA_MAT_SPRITE: SpriteData = (() => {
   const B = '#4169E1'
+  const L = '#6495ED'
   const _ = ''
   return [
-    [B, B, B, B, B],
-    [B, B, B, B, B],
-    [B, B, B, B, B],
-    [B, B, B, B, B],
+    [B, B, B, B, B, B],
+    [B, L, L, L, L, B],
+    [B, L, L, L, L, B],
+    [B, B, B, B, B, B],
   ]
 })()
 
@@ -1098,6 +1121,15 @@ export const FURNITURE_CATALOG: Record<string, FurnitureCatalogEntry> = {
     footprintW: 2,
     footprintH: 2,
     sprite: DESK_SQUARE_SPRITE,
+    isDesk: true,
+    category: 'desks',
+  },
+  desk_pc: {
+    type: 'desk_pc',
+    label: 'Desk with PC',
+    footprintW: 2,
+    footprintH: 2,
+    sprite: DESK_WITH_PC_SPRITE,
     isDesk: true,
     category: 'desks',
   },

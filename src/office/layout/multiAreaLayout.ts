@@ -94,15 +94,15 @@ export function createMultiAreaLayout(): OfficeLayout {
 
   const furniture: PlacedFurniture[] = []
 
-  // ── Office Area (6 workstations) ───────────────────────────────
+  // ── Office Area (6 workstations with PC) ───────────────────────
   for (let i = 0; i < 6; i++) {
     const col = 2 + (i % 3) * 5
     const row = i < 3 ? 3 : 7
     
-    // Desk (2x2)
+    // Desk with PC (combined)
     furniture.push({
-      uid: `desk-${i}`,
-      type: 'desk',
+      uid: `desk-pc-${i}`,
+      type: 'desk_pc',
       col,
       row,
     })
@@ -113,14 +113,6 @@ export function createMultiAreaLayout(): OfficeLayout {
       type: 'chair',
       col: col + 1,
       row: row - 1,
-    })
-    
-    // PC on desk
-    furniture.push({
-      uid: `pc-${i}`,
-      type: 'pc',
-      col: col + 1,
-      row,
     })
   }
 
