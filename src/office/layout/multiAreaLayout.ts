@@ -113,7 +113,7 @@ export function createMultiAreaLayout(): OfficeLayout {
       uid: `chair-${i}`,
       type: 'chair',
       col: col + 1,
-      row: row + 2,
+      row: row + 1,  // 紧贴桌子
     })
   }
 

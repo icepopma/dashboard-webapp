@@ -187,6 +187,22 @@ export function updateCharacter(
       break
     }
 
+    case CharacterState.THINK: {
+      // Thinking animation (hand on chin)
+      if (ch.frameTimer >= TYPE_FRAME_DURATION_SEC) {
+        ch.frameTimer -= TYPE_FRAME_DURATION_SEC
+        ch.frame = (ch.frame + 1) % 2
+      }
+      
+      if (ch.isActive) {
+        // Agent became active - return to typing
+        ch.state = CharacterState.TYPE
+        ch.frame = 0
+        ch.frameTimer = 0
+      }
+      break
+    }
+
     case CharacterState.REST:
     case CharacterState.COFFEE:
     case CharacterState.GYM: {
@@ -401,6 +417,9 @@ export function getCharacterSprite(ch: Character, sprites: CharacterSprites): Sp
       if (isReadingTool(ch.currentTool)) {
         return sprites.reading[ch.dir][ch.frame % 2]
       }
+      return sprites.typing[ch.dir][ch.frame % 2]
+    case CharacterState.THINK:
+      // Use typing animation for thinking (hand on chin pose)
       return sprites.typing[ch.dir][ch.frame % 2]
     case CharacterState.WALK:
       return sprites.walk[ch.dir][ch.frame % 4]

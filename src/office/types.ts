@@ -26,6 +26,8 @@ export const CharacterState = {
   IDLE: 'idle',
   WALK: 'walk',
   TYPE: 'type',
+  READ: 'read',
+  THINK: 'think',
   REST: 'rest',
   COFFEE: 'coffee',
   GYM: 'gym',
