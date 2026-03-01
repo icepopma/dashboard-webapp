@@ -98,7 +98,7 @@ export function createMultiAreaLayout(): OfficeLayout {
   // Spread out more to accommodate larger desks
   for (let i = 0; i < 6; i++) {
     const col = 1 + (i % 3) * 5
-    const row = i < 3 ? 2 : 6
+    const row = i < 3 ? 3 : 7
     
     // Desk with PC (combined) - 3x2 tiles
     furniture.push({
@@ -108,12 +108,12 @@ export function createMultiAreaLayout(): OfficeLayout {
       row,
     })
     
-    // Chair (in front of desk)
+    // Chair (in front of desk, below it so agent faces UP toward desk)
     furniture.push({
       uid: `chair-${i}`,
       type: 'chair',
       col: col + 1,
-      row: row - 1,
+      row: row + 2,
     })
   }
 

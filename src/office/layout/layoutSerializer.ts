@@ -67,8 +67,10 @@ export function layoutToSeats(furniture: PlacedFurniture[]): Map<string, Seat> {
     if (desk) {
       // Face toward the desk
       if (chair.row < desk.row) {
+        // Chair is above desk, face DOWN
         facingDir = Direction.DOWN
       } else {
+        // Chair is below desk, face UP (toward desk)
         facingDir = Direction.UP
       }
     }
