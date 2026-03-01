@@ -159,9 +159,6 @@ export const DESK_WITH_PC_SPRITE: SpriteData = (() => {
     [_, _, D, _, _, _, _, _, _, _, _, D, _, _, _, _],
   ]
 })()
-    [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-  ]
-})()
 
 /** Water cooler: 16x24 */
 export const COOLER_SPRITE: SpriteData = (() => {
