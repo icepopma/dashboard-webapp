@@ -2,74 +2,15 @@ import { TileType, Direction } from '../types'
 import { TILE_SIZE } from '../constants'
 import type { OfficeLayout, PlacedFurniture, TileType as TileTypeVal, Seat, FurnitureInstance, FloorColor } from '../types'
 import { getCatalogEntry } from '../sprites/spriteData'
+import { createMultiAreaLayout, AREA_DEFINITIONS, getAreaAt, getRandomPositionInArea } from './multiAreaLayout'
 
-/** Create a default office layout */
+// Re-export multi-area layout functions
+export { createMultiAreaLayout, AREA_DEFINITIONS, getAreaAt, getRandomPositionInArea }
+export type { AreaDefinition } from './multiAreaLayout'
+
+/** Create a default office layout (now uses multi-area) */
 export function createDefaultLayout(): OfficeLayout {
-  const cols = 20
-  const rows = 11
-  const tiles: TileTypeVal[] = []
-  const tileColors: Array<FloorColor | null> = []
-
-  // Create floor with wall border
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      if (r === 0 || r === rows - 1 || c === 0 || c === cols - 1) {
-        tiles.push(TileType.WALL)
-        tileColors.push(null)
-      } else {
-        tiles.push(TileType.FLOOR_1)
-        tileColors.push({ h: 35, s: 30, b: 15, c: 0 })
-      }
-    }
-  }
-
-  // Default furniture: 6 desks with chairs
-  const furniture: PlacedFurniture[] = []
-  
-  // Create 6 workstations
-  for (let i = 0; i < 6; i++) {
-    const col = 2 + (i % 3) * 6
-    const row = i < 3 ? 3 : 7
-    
-    // Desk (2x2)
-    furniture.push({
-      uid: `desk-${i}`,
-      type: 'desk',
-      col,
-      row,
-    })
-    
-    // Chair (in front of desk)
-    furniture.push({
-      uid: `chair-${i}`,
-      type: 'chair',
-      col: col + 1,
-      row: row - 1,
-    })
-    
-    // PC on desk
-    furniture.push({
-      uid: `pc-${i}`,
-      type: 'pc',
-      col: col + 1,
-      row,
-    })
-  }
-
-  // Add some decorations
-  furniture.push({ uid: 'plant-1', type: 'plant', col: 17, row: 2 })
-  furniture.push({ uid: 'plant-2', type: 'plant', col: 17, row: 8 })
-  furniture.push({ uid: 'bookshelf-1', type: 'bookshelf', col: 17, row: 5 })
-  furniture.push({ uid: 'cooler-1', type: 'cooler', col: 2, row: 9 })
-
-  return {
-    version: 1,
-    cols,
-    rows,
-    tiles,
-    furniture,
-    tileColors,
-  }
+  return createMultiAreaLayout()
 }
 
 /** Convert layout to 2D tile map */

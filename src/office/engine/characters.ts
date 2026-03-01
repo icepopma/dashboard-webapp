@@ -48,6 +48,36 @@ function randomInt(min: number, max: number): number {
   return min + Math.floor(Math.random() * (max - min + 1))
 }
 
+// ── Area Activity Spots for Multi-Area Office ───────────────────
+const AREA_ACTIVITY_SPOTS: Record<string, Array<{ col: number; row: number }>> = {
+  rest: [
+    { col: 19, row: 3 }, { col: 21, row: 3 }, { col: 22, row: 5 },
+    { col: 25, row: 5 }, { col: 24, row: 4 },
+  ],
+  coffee: [
+    { col: 19, row: 9 }, { col: 22, row: 9 }, { col: 23, row: 9 }, { col: 24, row: 9 },
+  ],
+  gym: [
+    { col: 19, row: 13 }, { col: 20, row: 13 }, { col: 23, row: 13 },
+    { col: 25, row: 13 }, { col: 26, row: 13 },
+  ],
+}
+
+function randomChoice(arr: { col: number; row: number }[]): { col: number; row: number } | null {
+  return arr.length > 0 ? arr[Math.floor(Math.random() * arr.length)] : null
+}
+
+function selectActivityArea(): string {
+  const areas = ['rest', 'coffee', 'gym']
+  return areas[Math.floor(Math.random() * areas.length)]
+}
+
+function getActivitySpot(): { col: number; row: number } | null {
+  const area = selectActivityArea()
+  const spots = AREA_ACTIVITY_SPOTS[area]
+  return spots ? randomChoice(spots) : null
+}
+
 export function createCharacter(
   id: number,
   palette: number,
@@ -167,7 +197,20 @@ export function updateCharacter(
             }
           }
         }
-        if (walkableTiles.length > 0) {
+        // Try to go to an activity area first (rest/coffee/gym)
+        const activitySpot = getActivitySpot()
+        if (activitySpot) {
+          const path = findPath(ch.tileCol, ch.tileRow, activitySpot.col, activitySpot.row, tileMap, blockedTiles)
+          if (path.length > 0) {
+            ch.path = path
+            ch.moveProgress = 0
+            ch.state = CharacterState.WALK
+            ch.frame = 0
+            ch.frameTimer = 0
+            ch.wanderCount++
+          }
+        } else if (walkableTiles.length > 0) {
+          // Fallback to random walkable tile
           const target = walkableTiles[Math.floor(Math.random() * walkableTiles.length)]
           const path = findPath(ch.tileCol, ch.tileRow, target.col, target.row, tileMap, blockedTiles)
           if (path.length > 0) {
