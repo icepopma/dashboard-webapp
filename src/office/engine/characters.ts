@@ -1,7 +1,8 @@
-import { CharacterState, Direction } from '../types'
+import { CharacterState, Direction, AreaType } from '../types'
 import { TILE_SIZE } from '../constants'
-import type { Character, Seat, TileType as TileTypeVal } from '../types'
+import type { Character, Seat, TileType as TileTypeVal, AreaType as AreaTypeVal } from '../types'
 import { findPath } from '../layout/tileMap'
+import { getAreaAt, getRandomPositionInArea, AREA_DEFINITIONS } from '../layout/layoutSerializer'
 import {
   WALK_SPEED_PX_PER_SEC,
   WALK_FRAME_DURATION_SEC,
@@ -18,6 +19,10 @@ import { getCharacterSprites } from '../sprites/spriteData'
 
 /** Tools that show reading animation */
 const READING_TOOLS = new Set(['Read', 'Grep', 'Glob', 'WebFetch', 'WebSearch', 'search', 'read', 'glob', 'grep'])
+
+/** Activity duration settings */
+const ACTIVITY_DURATION_MIN_SEC = 10
+const ACTIVITY_DURATION_MAX_SEC = 30
 
 export function isReadingTool(tool: string | null): boolean {
   if (!tool) return false
@@ -48,34 +53,8 @@ function randomInt(min: number, max: number): number {
   return min + Math.floor(Math.random() * (max - min + 1))
 }
 
-// ── Area Activity Spots for Multi-Area Office ───────────────────
-const AREA_ACTIVITY_SPOTS: Record<string, Array<{ col: number; row: number }>> = {
-  rest: [
-    { col: 19, row: 3 }, { col: 21, row: 3 }, { col: 22, row: 5 },
-    { col: 25, row: 5 }, { col: 24, row: 4 },
-  ],
-  coffee: [
-    { col: 19, row: 9 }, { col: 22, row: 9 }, { col: 23, row: 9 }, { col: 24, row: 9 },
-  ],
-  gym: [
-    { col: 19, row: 13 }, { col: 20, row: 13 }, { col: 23, row: 13 },
-    { col: 25, row: 13 }, { col: 26, row: 13 },
-  ],
-}
-
-function randomChoice(arr: { col: number; row: number }[]): { col: number; row: number } | null {
-  return arr.length > 0 ? arr[Math.floor(Math.random() * arr.length)] : null
-}
-
-function selectActivityArea(): string {
-  const areas = ['rest', 'coffee', 'gym']
-  return areas[Math.floor(Math.random() * areas.length)]
-}
-
-function getActivitySpot(): { col: number; row: number } | null {
-  const area = selectActivityArea()
-  const spots = AREA_ACTIVITY_SPOTS[area]
-  return spots ? randomChoice(spots) : null
+function randomChoice<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)]
 }
 
 export function createCharacter(
@@ -89,6 +68,10 @@ export function createCharacter(
   const col = seat ? seat.seatCol : 1
   const row = seat ? seat.seatRow : 1
   const center = tileCenter(col, row)
+  
+  // Determine initial area
+  const area = getAreaAt(col, row)
+  
   return {
     id,
     state: CharacterState.TYPE,
@@ -118,6 +101,41 @@ export function createCharacter(
     matrixEffectTimer: 0,
     matrixEffectSeeds: [],
     name,
+    currentArea: area?.type || AreaType.OFFICE,
+    targetArea: null,
+    activityTimer: 0,
+  }
+}
+
+/**
+ * Determine where an agent should go based on their status
+ */
+function determineTargetArea(ch: Character): AreaTypeVal | null {
+  if (ch.isActive) {
+    // Working agents go to office
+    return AreaType.OFFICE
+  }
+  
+  // Idle agents choose random activity area
+  const activityAreas = [AreaType.REST, AreaType.COFFEE, AreaType.GYM]
+  return randomChoice(activityAreas)
+}
+
+/**
+ * Get the character state for an area
+ */
+function getStateForArea(area: AreaTypeVal): CharacterState {
+  switch (area) {
+    case AreaType.OFFICE:
+      return CharacterState.TYPE
+    case AreaType.REST:
+      return CharacterState.REST
+    case AreaType.COFFEE:
+      return CharacterState.COFFEE
+    case AreaType.GYM:
+      return CharacterState.GYM
+    default:
+      return CharacterState.IDLE
   }
 }
 
@@ -130,6 +148,12 @@ export function updateCharacter(
   blockedTiles: Set<string>,
 ): void {
   ch.frameTimer += dt
+  
+  // Update current area
+  const currentAreaInfo = getAreaAt(ch.tileCol, ch.tileRow)
+  if (currentAreaInfo) {
+    ch.currentArea = currentAreaInfo.type
+  }
 
   switch (ch.state) {
     case CharacterState.TYPE: {
@@ -137,18 +161,76 @@ export function updateCharacter(
         ch.frameTimer -= TYPE_FRAME_DURATION_SEC
         ch.frame = (ch.frame + 1) % 2
       }
+      
       if (!ch.isActive) {
+        // Agent became idle - go to activity area
         if (ch.seatTimer > 0) {
           ch.seatTimer -= dt
           break
         }
         ch.seatTimer = 0
-        ch.state = CharacterState.IDLE
-        ch.frame = 0
-        ch.frameTimer = 0
-        ch.wanderTimer = randomRange(WANDER_PAUSE_MIN_SEC, WANDER_PAUSE_MAX_SEC)
-        ch.wanderCount = 0
-        ch.wanderLimit = randomInt(WANDER_MOVES_BEFORE_REST_MIN, WANDER_MOVES_BEFORE_REST_MAX)
+        ch.targetArea = determineTargetArea(ch)
+        if (ch.targetArea && ch.targetArea !== AreaType.OFFICE) {
+          const targetPos = getRandomPositionInArea(ch.targetArea, tileMap, blockedTiles)
+          if (targetPos) {
+            const path = findPath(ch.tileCol, ch.tileRow, targetPos.col, targetPos.row, tileMap, blockedTiles)
+            if (path.length > 0) {
+              ch.path = path
+              ch.moveProgress = 0
+              ch.state = CharacterState.WALK
+              ch.frame = 0
+              ch.frameTimer = 0
+            }
+          }
+        }
+      }
+      break
+    }
+
+    case CharacterState.REST:
+    case CharacterState.COFFEE:
+    case CharacterState.GYM: {
+      // Activity animation (simple idle-like)
+      ch.frame = 0
+      
+      // Activity timer
+      ch.activityTimer -= dt
+      
+      if (ch.isActive) {
+        // Agent became active - go back to office
+        if (ch.seatId) {
+          const seat = seats.get(ch.seatId)
+          if (seat) {
+            const path = findPath(ch.tileCol, ch.tileRow, seat.seatCol, seat.seatRow, tileMap, blockedTiles)
+            if (path.length > 0) {
+              ch.path = path
+              ch.moveProgress = 0
+              ch.state = CharacterState.WALK
+              ch.frame = 0
+              ch.frameTimer = 0
+              ch.targetArea = AreaType.OFFICE
+            }
+          }
+        }
+      } else if (ch.activityTimer <= 0) {
+        // Time to change activity
+        ch.targetArea = determineTargetArea(ch)
+        if (ch.targetArea && ch.targetArea !== ch.currentArea) {
+          const targetPos = getRandomPositionInArea(ch.targetArea, tileMap, blockedTiles)
+          if (targetPos) {
+            const path = findPath(ch.tileCol, ch.tileRow, targetPos.col, targetPos.row, tileMap, blockedTiles)
+            if (path.length > 0) {
+              ch.path = path
+              ch.moveProgress = 0
+              ch.state = CharacterState.WALK
+              ch.frame = 0
+              ch.frameTimer = 0
+            }
+          }
+        } else {
+          // Stay in current area, reset timer
+          ch.activityTimer = randomRange(ACTIVITY_DURATION_MIN_SEC, ACTIVITY_DURATION_MAX_SEC)
+        }
       }
       break
     }
@@ -156,7 +238,9 @@ export function updateCharacter(
     case CharacterState.IDLE: {
       ch.frame = 0
       if (ch.seatTimer < 0) ch.seatTimer = 0
+      
       if (ch.isActive) {
+        // Agent became active - return to seat
         if (!ch.seatId) {
           ch.state = CharacterState.TYPE
           ch.frame = 0
@@ -172,6 +256,7 @@ export function updateCharacter(
             ch.state = CharacterState.WALK
             ch.frame = 0
             ch.frameTimer = 0
+            ch.targetArea = AreaType.OFFICE
           } else {
             ch.state = CharacterState.TYPE
             ch.dir = seat.facingDir
@@ -181,6 +266,7 @@ export function updateCharacter(
         }
         break
       }
+      
       ch.wanderTimer -= dt
       if (ch.wanderTimer <= 0) {
         if (ch.wanderCount >= ch.wanderLimit && ch.seatId) {
@@ -197,20 +283,7 @@ export function updateCharacter(
             }
           }
         }
-        // Try to go to an activity area first (rest/coffee/gym)
-        const activitySpot = getActivitySpot()
-        if (activitySpot) {
-          const path = findPath(ch.tileCol, ch.tileRow, activitySpot.col, activitySpot.row, tileMap, blockedTiles)
-          if (path.length > 0) {
-            ch.path = path
-            ch.moveProgress = 0
-            ch.state = CharacterState.WALK
-            ch.frame = 0
-            ch.frameTimer = 0
-            ch.wanderCount++
-          }
-        } else if (walkableTiles.length > 0) {
-          // Fallback to random walkable tile
+        if (walkableTiles.length > 0) {
           const target = walkableTiles[Math.floor(Math.random() * walkableTiles.length)]
           const path = findPath(ch.tileCol, ch.tileRow, target.col, target.row, tileMap, blockedTiles)
           if (path.length > 0) {
@@ -251,7 +324,14 @@ export function updateCharacter(
             }
           }
         } else {
-          if (ch.seatId) {
+          // Check if we reached target area
+          if (ch.targetArea && ch.currentArea === ch.targetArea) {
+            // Start activity in this area
+            ch.state = getStateForArea(ch.targetArea)
+            ch.activityTimer = randomRange(ACTIVITY_DURATION_MIN_SEC, ACTIVITY_DURATION_MAX_SEC)
+            ch.frame = 0
+            ch.frameTimer = 0
+          } else if (ch.seatId) {
             const seat = seats.get(ch.seatId)
             if (seat && ch.tileCol === seat.seatCol && ch.tileRow === seat.seatRow) {
               ch.state = CharacterState.TYPE
@@ -325,6 +405,10 @@ export function getCharacterSprite(ch: Character, sprites: CharacterSprites): Sp
     case CharacterState.WALK:
       return sprites.walk[ch.dir][ch.frame % 4]
     case CharacterState.IDLE:
+    case CharacterState.REST:
+    case CharacterState.COFFEE:
+    case CharacterState.GYM:
+      // Use walk idle frame for activity states
       return sprites.walk[ch.dir][1]
     default:
       return sprites.walk[ch.dir][1]

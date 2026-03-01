@@ -10,7 +10,7 @@ import { AgentStatusPanel } from '@/components/AgentStatusPanel'
 import { useSound } from '@/hooks/use-sound'
 import { useAgents, toOfficeAgentInfo } from '@/hooks/use-agents'
 import { ZOOM_DEFAULT_DPR_FACTOR, UNDO_STACK_MAX_SIZE, DEFAULT_FLOOR_COLOR, DEFAULT_WALL_COLOR } from '@/office/constants'
-import { EditTool, TileType, type OfficeLayout, type FloorColor, type AgentInfo } from '@/office/types'
+import { EditTool, TileType, type OfficeLayout, type FloorColor, type AgentInfo, type TaskInfo } from '@/office/types'
 import { serializeLayout, deserializeLayout, createDefaultLayout } from '@/office/layout/layoutSerializer'
 import { AGENT_CONFIGS, type AgentRuntimeState } from '@/lib/agent-state'
 import type { AgentType } from '@/orchestrator/types'
@@ -52,6 +52,16 @@ export const OfficeView: React.FC = () => {
     undoStack: [],
     redoStack: [],
   })
+
+  // Demo tasks for task board
+  const [tasks] = useState<TaskInfo[]>([
+    { id: "1", title: "实现用户认证", assignee: "Pop", status: "in_progress" },
+    { id: "2", title: "设计数据库架构", assignee: "Codex", status: "in_progress" },
+    { id: "3", title: "编写API文档", assignee: "Claude", status: "in_progress" },
+    { id: "4", title: "创建登录页面", assignee: "Quill", status: "completed" },
+    { id: "5", title: "配置CI/CD", assignee: "Echo", status: "completed" },
+    { id: "6", title: "单元测试", assignee: "Scout", status: "in_progress" },
+  ])
 
   // Fetch agents from API with real-time polling
   const { agents: apiAgents, loading: agentsLoading } = useAgents({ pollInterval: 3000 })
@@ -280,6 +290,8 @@ export const OfficeView: React.FC = () => {
         officeState={officeState}
         agents={agents}
         onAgentClick={handleAgentClick}
+        tasks={tasks}
+        
         zoom={zoom}
         onZoomChange={handleZoomChange}
         panRef={panRef}
@@ -409,6 +421,7 @@ export const OfficeView: React.FC = () => {
       <AgentStatusPanel
         selectedAgentId={officeState.selectedAgentId}
         onAgentClick={handleAgentClick}
+        
         agentMapping={agentMapping}
       />
 

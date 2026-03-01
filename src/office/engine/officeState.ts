@@ -1,5 +1,5 @@
 import { TILE_SIZE, MATRIX_EFFECT_DURATION_SEC } from '../constants'
-import { CharacterState, Direction } from '../types'
+import { CharacterState, Direction, AreaType } from '../types'
 import {
   PALETTE_COUNT,
   HUE_SHIFT_MIN_DEG,
@@ -13,7 +13,7 @@ import {
   CHARACTER_HIT_HEIGHT,
   CHARACTER_SITTING_OFFSET_PX,
 } from '../constants'
-import type { Character, Seat, FurnitureInstance, TileType as TileTypeVal, OfficeLayout, PlacedFurniture } from '../types'
+import type { Character, Seat, FurnitureInstance, TileType as TileTypeVal, OfficeLayout, PlacedFurniture, TaskInfo, TaskBubbleData } from '../types'
 import { createCharacter, updateCharacter } from './characters'
 import { isWalkable, getWalkableTiles, findPath } from '../layout/tileMap'
 import {
@@ -37,6 +37,7 @@ export class OfficeState {
   selectedAgentId: number | null = null
   hoveredAgentId: number | null = null
   hoveredTile: { col: number; row: number } | null = null
+  tasks: TaskInfo[] = []
 
   constructor(layout?: OfficeLayout) {
     this.layout = layout || createDefaultLayout()
@@ -204,6 +205,19 @@ export class OfficeState {
     if (ch) ch.currentTool = tool
   }
 
+  setAgentTask(id: number, taskName: string | null, taskStatus: 'working' | 'waiting' | 'complete' | 'error' = 'working'): void {
+    const ch = this.characters.get(id)
+    if (ch && taskName) {
+      ch.bubbleData = {
+        taskName,
+        status: taskStatus,
+        tool: ch.currentTool || undefined,
+      }
+    } else if (ch) {
+      ch.bubbleData = undefined
+    }
+  }
+
   showPermissionBubble(id: number): void {
     const ch = this.characters.get(id)
     if (ch) {
@@ -226,6 +240,10 @@ export class OfficeState {
       ch.bubbleType = 'waiting'
       ch.bubbleTimer = WAITING_BUBBLE_DURATION_SEC
     }
+  }
+
+  setTasks(tasks: TaskInfo[]): void {
+    this.tasks = tasks
   }
 
   update(dt: number): void {
@@ -284,5 +302,9 @@ export class OfficeState {
 
   getLayout(): OfficeLayout {
     return this.layout
+  }
+
+  getTasks(): TaskInfo[] {
+    return this.tasks
   }
 }

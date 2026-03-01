@@ -26,6 +26,9 @@ export const CharacterState = {
   IDLE: 'idle',
   WALK: 'walk',
   TYPE: 'type',
+  REST: 'rest',
+  COFFEE: 'coffee',
+  GYM: 'gym',
 } as const
 export type CharacterState = (typeof CharacterState)[keyof typeof CharacterState]
 
@@ -36,6 +39,15 @@ export const Direction = {
   UP: 3,
 } as const
 export type Direction = (typeof Direction)[keyof typeof Direction]
+/** Area types for agent behavior */
+export const AreaType = {
+  OFFICE: 'office',
+  REST: 'rest',
+  COFFEE: 'coffee',
+  GYM: 'gym',
+} as const
+export type AreaType = (typeof AreaType)[keyof typeof AreaType]
+
 
 /** 2D array of hex color strings (or '' for transparent) */
 export type SpriteData = string[][]
@@ -143,8 +155,9 @@ export interface Character {
   wanderLimit: number
   isActive: boolean
   seatId: string | null
-  bubbleType: 'permission' | 'waiting' | null
+  bubbleType: 'permission' | 'waiting' | 'task' | null
   bubbleTimer: number
+  bubbleData?: TaskBubbleData
   seatTimer: number
   isSubagent: boolean
   parentAgentId: number | null
@@ -152,6 +165,10 @@ export interface Character {
   matrixEffectTimer: number
   matrixEffectSeeds: number[]
   name: string
+  // Area-based behavior
+  currentArea: AreaType | null
+  targetArea: AreaType | null
+  activityTimer: number
 }
 
 export interface AgentInfo {
@@ -159,6 +176,7 @@ export interface AgentInfo {
   name: string
   status: 'active' | 'idle' | 'waiting' | 'complete'
   currentTool?: string | null
+  currentTask?: string | null
 }
 
 export interface OfficeViewProps {
@@ -167,4 +185,18 @@ export interface OfficeViewProps {
   onDeskReassign?: (agentId: number, deskId: string) => void
   soundEnabled?: boolean
   onSoundToggle?: (enabled: boolean) => void
+}
+
+export interface TaskInfo {
+  id: string
+  title: string
+  assignee: string
+  status: 'in_progress' | 'completed'
+}
+
+export interface TaskBubbleData {
+  taskName: string
+  status: 'working' | 'waiting' | 'complete' | 'error'
+  tool?: string
+  progress?: number
 }

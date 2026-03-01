@@ -5,11 +5,12 @@ import { OfficeState } from '@/office/engine/officeState'
 import { startGameLoop } from '@/office/engine/gameLoop'
 import { renderFrame } from '@/office/engine/renderer'
 import { TILE_SIZE, ZOOM_MIN, ZOOM_MAX, ZOOM_DEFAULT_DPR_FACTOR } from '@/office/constants'
-import type { AgentInfo } from '@/office/types'
+import type { AgentInfo, TaskInfo } from '@/office/types'
 
 interface OfficeCanvasProps {
   officeState: OfficeState
   agents?: AgentInfo[]
+  tasks?: TaskInfo[]
   onAgentClick?: (id: number) => void
   zoom: number
   onZoomChange: (zoom: number) => void
@@ -19,6 +20,7 @@ interface OfficeCanvasProps {
 export const OfficeCanvas: React.FC<OfficeCanvasProps> = ({
   officeState,
   agents = [],
+  tasks = [],
   onAgentClick,
   zoom,
   onZoomChange,
@@ -60,6 +62,10 @@ export const OfficeCanvas: React.FC<OfficeCanvasProps> = ({
       if (ch) {
         officeState.setAgentActive(agent.id, agent.status === 'active')
         officeState.setAgentTool(agent.id, agent.currentTool || null)
+        officeState.setAgentTask(agent.id, agent.currentTask || null, 
+          agent.status === 'active' ? 'working' : 
+          agent.status === 'waiting' ? 'waiting' : 
+          agent.status === 'complete' ? 'complete' : 'working')
         if (agent.status === 'waiting') {
           officeState.showWaitingBubble(agent.id)
         } else {
@@ -77,6 +83,11 @@ export const OfficeCanvas: React.FC<OfficeCanvasProps> = ({
       }
     }
   }, [agents, officeState])
+
+  // Sync tasks with office state
+  useEffect(() => {
+    officeState.setTasks(tasks)
+  }, [tasks, officeState])
 
   // Game loop
   useEffect(() => {
@@ -103,6 +114,7 @@ export const OfficeCanvas: React.FC<OfficeCanvasProps> = ({
           officeState.layout.tileColors,
           officeState.layout.cols,
           officeState.layout.rows,
+          officeState.getTasks(),
         )
       },
     })

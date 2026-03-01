@@ -1,9 +1,11 @@
 import { TileType, Direction } from '../types'
 import { TILE_SIZE } from '../constants'
-import type { TileType as TileTypeVal, FurnitureInstance, Character, SpriteData, Seat, FloorColor } from '../types'
+import type { TileType as TileTypeVal, FurnitureInstance, Character, SpriteData, Seat, FloorColor, TaskInfo } from '../types'
 import { getCachedSprite, getOutlineSprite } from '../sprites/spriteCache'
 import { getCharacterSprites, BUBBLE_PERMISSION_SPRITE, BUBBLE_WAITING_SPRITE } from '../sprites/spriteData'
 import { getCharacterSprite } from './characters'
+import { renderTaskBubble, renderActivityIcon } from './taskBubbleRenderer'
+import { renderTaskBoard, getTaskBoardPosition } from './taskBoardRenderer'
 import {
   SELECTED_OUTLINE_ALPHA,
   HOVERED_OUTLINE_ALPHA,
@@ -179,6 +181,40 @@ export function renderBubbles(
   }
 }
 
+export function renderTaskBubbles(
+  ctx: CanvasRenderingContext2D,
+  characters: Character[],
+  offsetX: number,
+  offsetY: number,
+  zoom: number,
+  selectedAgentId: number | null,
+): void {
+  for (const ch of characters) {
+    // Show task bubble for selected agent with bubble data
+    if (selectedAgentId === ch.id && ch.bubbleData) {
+      const sittingOffset = ch.state === 'type' ? CHARACTER_SITTING_OFFSET_PX : 0
+      const screenX = offsetX + ch.x * zoom
+      const screenY = offsetY + (ch.y + sittingOffset - BUBBLE_VERTICAL_OFFSET_PX * 2) * zoom
+      
+      renderTaskBubble(ctx, screenX - 60 * zoom, screenY - 60 * zoom, ch.bubbleData, zoom)
+    }
+    
+    // Render activity icon above character
+    const activityType = ch.state === 'type' ? 'typing' :
+                         ch.state === 'rest' ? 'rest' :
+                         ch.state === 'coffee' ? 'coffee' :
+                         ch.state === 'gym' ? 'gym' : null
+    
+    if (activityType && ch.isActive) {
+      const sittingOffset = ch.state === 'type' ? CHARACTER_SITTING_OFFSET_PX : 0
+      const screenX = offsetX + ch.x * zoom
+      const screenY = offsetY + (ch.y + sittingOffset - BUBBLE_VERTICAL_OFFSET_PX) * zoom
+      
+      renderActivityIcon(ctx, screenX, screenY, activityType, zoom)
+    }
+  }
+}
+
 export function renderGridOverlay(
   ctx: CanvasRenderingContext2D,
   offsetX: number,
@@ -298,6 +334,38 @@ export function renderAgentLabels(
   }
 }
 
+// ── Area Labels ────────────────────────────────────────────────
+
+export function renderAreaLabels(
+  ctx: CanvasRenderingContext2D,
+  offsetX: number,
+  offsetY: number,
+  zoom: number,
+): void {
+  const areas = [
+    { name: '办公区', col: 8, row: 0, color: '#6688aa' },
+    { name: '休息室', col: 21, row: 0, color: '#aa8866' },
+    { name: '咖啡间', col: 30, row: 0, color: '#aa9966' },
+    { name: '健身房', col: 23, row: 9, color: '#66aa88' },
+  ]
+  
+  const fontSize = Math.max(9, Math.round(11 * Math.min(zoom, 1.5)))
+  ctx.font = `600 ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'bottom'
+  
+  for (const area of areas) {
+    const screenX = offsetX + area.col * TILE_SIZE * zoom
+    const screenY = offsetY + area.row * TILE_SIZE * zoom - 4 * zoom
+    
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'
+    ctx.fillRect(screenX - 24 * zoom, screenY - fontSize - 2 * zoom, 48 * zoom, fontSize + 4 * zoom)
+    
+    ctx.fillStyle = area.color
+    ctx.fillText(area.name, screenX, screenY)
+  }
+}
+
 // ── Render Full Frame ───────────────────────────────────────────
 
 export function renderFrame(
@@ -315,6 +383,7 @@ export function renderFrame(
   tileColors?: Array<FloorColor | null>,
   cols?: number,
   rows?: number,
+  tasks?: TaskInfo[],
 ): void {
   const layoutCols = cols ?? (tileMap.length > 0 ? tileMap[0].length : 0)
   const layoutRows = rows ?? tileMap.length
@@ -331,5 +400,17 @@ export function renderFrame(
   renderTileGrid(ctx, tileMap, offsetX, offsetY, zoom, tileColors, layoutCols)
   renderScene(ctx, furniture, characters, offsetX, offsetY, zoom, selectedAgentId, hoveredAgentId)
   renderBubbles(ctx, characters, offsetX, offsetY, zoom)
+  renderTaskBubbles(ctx, characters, offsetX, offsetY, zoom, selectedAgentId)
   renderAgentLabels(ctx, characters, offsetX, offsetY, zoom, selectedAgentId)
+  
+  // Render area labels
+  renderAreaLabels(ctx, offsetX, offsetY, zoom)
+  
+  // Render task board on whiteboard (col 14, row 1)
+  if (tasks && tasks.length > 0) {
+    const boardConfig = getTaskBoardPosition(14, 1, zoom)
+    boardConfig.x = offsetX + 14 * TILE_SIZE * zoom + 2 * zoom
+    boardConfig.y = offsetY + 1 * TILE_SIZE * zoom + 2 * zoom
+    renderTaskBoard(ctx, tasks, boardConfig)
+  }
 }
