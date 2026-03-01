@@ -134,29 +134,37 @@ export const PC_SPRITE: SpriteData = (() => {
   ]
 })()
 
-// Desk with PC on it (combined sprite)
+// Desk with PC on it (combined sprite) - LARGER 24x20
 export const DESK_WITH_PC_SPRITE: SpriteData = (() => {
-  const W = '#8B6914'
-  const L = '#A07828'
-  const S = '#B8922E'
-  const D = '#6B4E0A'
-  const B = '#333333'
-  const M = '#1a1a1a'
-  const G = '#4488ff'
+  const W = '#8B6914'  // Wood dark
+  const L = '#A07828'  // Wood light  
+  const S = '#B8922E'  // Wood surface
+  const D = '#6B4E0A'  // Wood leg
+  const B = '#2a2a2a'  // Monitor border
+  const M = '#1a1a1a'  // Monitor frame
+  const G = '#4488ff'  // Screen glow
   const _ = ''
   return [
-    [_, _, _, _, B, B, B, B, B, B, B, _, _, _, _, _],
-    [_, _, B, M, M, M, M, M, M, M, B, _, _, _, _, _],
-    [_, _, B, M, G, G, G, G, G, M, B, _, _, _, _, _],
-    [_, _, B, M, G, G, G, G, G, M, B, _, _, _, _, _],
-    [_, _, B, B, B, B, B, B, B, B, B, _, _, _, _, _],
-    [_, _, _, _, _, B, B, _, _, _, _, _, _, _, _, _],
-    [_, _, W, W, W, W, W, W, W, W, W, W, _, _, _, _],
-    [_, W, L, L, L, L, L, L, L, L, L, L, W, _, _, _],
-    [_, W, S, S, S, S, S, S, S, S, S, S, W, D, D, _],
-    [_, W, W, W, W, W, W, W, W, W, W, W, W, D, D, _],
-    [_, _, D, _, _, _, _, _, _, _, _, D, _, _, _, _],
-    [_, _, D, _, _, _, _, _, _, _, _, D, _, _, _, _],
+    // Monitor (top)
+    [_, _, _, _, B, B, B, B, B, B, B, B, B, B, _, _, _, _, _, _, _, _, _],
+    [_, _, _, B, M, M, M, M, M, M, M, M, M, M, B, _, _, _, _, _, _, _, _],
+    [_, _, _, B, M, G, G, G, G, G, G, G, G, M, B, _, _, _, _, _, _, _, _],
+    [_, _, _, B, M, G, G, G, G, G, G, G, G, M, B, _, _, _, _, _, _, _, _],
+    [_, _, _, B, M, G, G, G, G, G, G, G, G, M, B, _, _, _, _, _, _, _, _],
+    [_, _, _, B, M, M, M, M, M, M, M, M, M, M, B, _, _, _, _, _, _, _, _],
+    [_, _, _, B, B, B, B, B, B, B, B, B, B, B, B, _, _, _, _, _, _, _, _],
+    [_, _, _, _, _, _, _, _, B, B, B, _, _, _, _, _, _, _, _, _, _, _, _],
+    [_, _, _, _, _, _, _, B, B, B, B, B, _, _, _, _, _, _, _, _, _, _, _],
+    // Desk surface
+    [_, _, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, _, _, _, _, _, _],
+    [_, W, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, W, _, _, _, _, _],
+    [_, W, S, S, S, S, S, S, S, S, S, S, S, S, S, S, S, W, _, _, _, _, _],
+    [_, W, S, S, S, S, S, S, S, S, S, S, S, S, S, S, S, W, D, D, _, _, _],
+    [_, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, D, D, _, _, _],
+    // Legs
+    [_, _, D, _, _, _, _, _, _, _, _, _, _, _, _, _, D, _, _, _, _, _, _],
+    [_, _, D, _, _, _, _, _, _, _, _, _, _, _, _, _, D, _, _, _, _, _, _],
+    [_, _, D, _, _, _, _, _, _, _, _, _, _, _, _, _, D, _, _, _, _, _, _],
   ]
 })()
 
@@ -282,152 +290,224 @@ export const WHITEBOARD_SPRITE: SpriteData = (() => {
 })()
 
 export const SOFA_SPRITE: SpriteData = (() => {
-  const B = '#5D3A1A'
-  const R = '#8B4513'
-  const C = '#DEB887'
+  // Large comfortable sofa - 24x16
+  const B = '#5D3A1A'  // Dark brown back
+  const R = '#8B4513'  // Saddle brown cushion
+  const C = '#DEB887'  // Burlywood cushion top
+  const A = '#CD853F'  // Peru arm rest
   const _ = ''
   return [
-    [B, B, B, B, B, B, B, B, B, B, B, B],
-    [B, C, C, C, C, C, C, C, C, C, C, B],
-    [B, C, C, C, C, C, C, C, C, C, C, B],
-    [B, C, C, C, C, C, C, C, C, C, C, B],
-    [B, R, R, R, R, R, R, R, R, R, R, B],
-    [B, R, R, R, R, R, R, R, R, R, R, B],
-    [B, B, B, B, B, B, B, B, B, B, B, B],
+    [B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B],
+    [B, C, C, C, C, C, C, C, C, C, C, C, C, C, C, C, C, C, C, C, C, C, C, B],
+    [B, C, C, C, C, C, C, C, C, C, C, C, C, C, C, C, C, C, C, C, C, C, C, B],
+    [B, C, C, C, C, C, C, C, C, C, C, C, C, C, C, C, C, C, C, C, C, C, C, B],
+    [B, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, B],
+    [B, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, B],
+    [B, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, B],
+    [A, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, A],
+    [A, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, A],
+    [A, A, A, A, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, A, A, A, A],
   ]
 })()
 
 export const TV_SPRITE: SpriteData = (() => {
+  // Large TV on wall - 20x14
   const B = '#1a1a1a'
   const S = '#0a0a0a'
   const G = '#4488ff'
+  const C = '#00ccff'  // Cyan accent
   const _ = ''
   return [
-    [B, B, B, B, B, B, B, B, B, B, B, B],
-    [B, S, S, S, S, S, S, S, S, S, S, B],
-    [B, S, G, G, G, G, G, G, G, G, S, B],
-    [B, S, G, G, G, G, G, G, G, G, S, B],
-    [B, S, G, G, G, G, G, G, G, G, S, B],
-    [B, S, S, S, S, S, S, S, S, S, S, B],
-    [B, B, B, B, B, B, B, B, B, B, B, B],
-    [_, _, _, _, B, B, B, B, _, _, _, _],
+    [B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B],
+    [B, S, S, S, S, S, S, S, S, S, S, S, S, S, S, S, S, S, S, B],
+    [B, S, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, S, B],
+    [B, S, G, G, C, C, G, G, G, G, G, G, G, G, C, C, G, G, S, B],
+    [B, S, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, S, B],
+    [B, S, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, S, B],
+    [B, S, G, G, C, C, G, G, G, G, G, G, G, G, C, C, G, G, S, B],
+    [B, S, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, S, B],
+    [B, S, S, S, S, S, S, S, S, S, S, S, S, S, S, S, S, S, S, B],
+    [B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B],
+    [_, _, _, _, _, _, _, _, B, B, B, B, _, _, _, _, _, _, _, _],
+    [_, _, _, _, _, _, _, B, B, B, B, B, B, _, _, _, _, _, _, _],
   ]
 })()
 
 export const BEANBAG_SPRITE: SpriteData = (() => {
-  const P = '#8B008B'
-  const D = '#4B0082'
+  // Large bean bag - 16x12
+  const P = '#9932CC'  // Purple
+  const D = '#4B0082'  // Indigo dark
+  const L = '#BA55D3'  // Light purple
   const _ = ''
   return [
-    [_, _, D, D, D, D, _, _],
-    [_, D, P, P, P, P, D, _],
-    [D, P, P, P, P, P, P, D],
-    [D, P, P, P, P, P, P, D],
-    [D, P, P, P, P, P, P, D],
-    [_, D, D, D, D, D, D, _],
+    [_, _, _, D, D, D, D, D, D, D, D, _, _, _, _, _],
+    [_, _, D, L, L, L, L, L, L, L, L, D, _, _, _, _],
+    [_, D, L, P, P, P, P, P, P, P, P, L, D, _, _, _],
+    [_, D, P, P, P, P, P, P, P, P, P, P, P, D, _, _],
+    [D, L, P, P, P, P, P, P, P, P, P, P, P, L, D, _],
+    [D, P, P, P, P, P, P, P, P, P, P, P, P, P, D, _],
+    [D, P, P, P, P, P, P, P, P, P, P, P, P, P, D, _],
+    [D, L, P, P, P, P, P, P, P, P, P, P, P, L, D, _],
+    [_, D, P, P, P, P, P, P, P, P, P, P, P, D, _, _],
+    [_, _, D, L, L, L, L, L, L, L, L, L, D, _, _, _],
+    [_, _, _, D, D, D, D, D, D, D, D, D, _, _, _, _],
   ]
 })()
 
 export const COFFEE_MACHINE_SPRITE: SpriteData = (() => {
+  // Coffee machine - 12x16
   const G = '#404040'
   const D = '#202020'
   const B = '#1a1a1a'
-  const R = '#8B0000'
-  const O = '#FF4500'
+  const R = '#8B4513'  // Coffee brown
+  const O = '#FF6600'  // Orange light
+  const S = '#C0C0C0'  // Silver
   const _ = ''
   return [
-    [G, G, G, G, G, G],
-    [D, B, B, B, B, D],
-    [D, B, R, R, B, D],
-    [D, B, B, O, B, D],
-    [D, D, D, D, D, D],
+    [_, _, G, G, G, G, G, G, G, G, _, _],
+    [_, G, S, S, S, S, S, S, S, S, G, _],
+    [_, G, S, B, B, B, B, B, B, S, G, _],
+    [_, G, S, B, R, R, R, R, B, S, G, _],
+    [_, G, S, B, R, R, R, R, B, S, G, _],
+    [_, G, S, B, B, B, B, B, B, S, G, _],
+    [_, G, S, S, S, O, O, S, S, S, G, _],
+    [_, G, G, G, G, G, G, G, G, G, G, _],
+    [_, _, D, D, D, D, D, D, D, D, _, _],
+    [_, _, D, _, _, R, R, _, _, D, _, _],
+    [_, _, D, _, _, R, R, _, _, D, _, _],
+    [_, D, D, D, _, _, _, _, D, D, _, _],
   ]
 })()
 
 export const DINING_TABLE_SPRITE: SpriteData = (() => {
-  const W = '#DEB887'
-  const B = '#8B4513'
+  // Large dining table - 20x12
+  const W = '#DEB887'  // Wood top
+  const B = '#8B4513'  // Wood border
+  const D = '#5D3A1A'  // Dark leg
   const _ = ''
   return [
-    [_, B, B, B, B, B, B, B, _],
-    [B, W, W, W, W, W, W, W, B],
-    [B, W, W, W, W, W, W, W, B],
-    [B, W, W, W, W, W, W, W, B],
-    [B, W, W, W, W, W, W, W, B],
-    [B, W, W, W, W, W, W, W, B],
-    [_, B, B, B, B, B, B, B, _],
+    [_, _, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, _, _],
+    [_, B, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, B, _],
+    [_, B, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, B],
+    [B, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, B],
+    [B, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, B],
+    [B, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, B],
+    [B, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, B],
+    [_, B, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, B],
+    [_, _, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, B, _, _],
+    [_, _, _, D, _, _, _, _, _, _, _, _, _, _, _, _, D, _, _, _],
+    [_, _, _, D, _, _, _, _, _, _, _, _, _, _, _, _, D, _, _, _],
   ]
 })()
 
 export const FRIDGE_SPRITE: SpriteData = (() => {
-  const S = '#E8E8E8'
-  const D = '#A0A0A0'
-  const H = '#404040'
+  // Tall fridge - 12x24
+  const S = '#E8E8E8'  // Silver
+  const D = '#A0A0A0'  // Dark silver
+  const H = '#404040'  // Handle
+  const B = '#808080'  // Border
   const _ = ''
   return [
-    [D, D, D, D, D, D],
-    [S, S, S, S, S, S],
-    [S, S, S, S, H, S],
-    [S, S, S, S, S, S],
-    [S, S, S, S, H, S],
-    [S, S, S, S, S, S],
-    [D, D, D, D, D, D],
+    [_, B, B, B, B, B, B, B, B, B, B, _],
+    [_, B, S, S, S, S, S, S, S, S, B, _],
+    [_, B, S, S, S, S, S, S, S, S, B, _],
+    [_, B, S, S, S, S, S, S, S, S, B, _],
+    [_, B, S, S, S, S, S, S, S, S, B, _],
+    [_, B, S, S, S, S, H, S, S, S, B, _],
+    [_, B, D, D, D, D, D, D, D, D, B, _],
+    [_, B, S, S, S, S, S, S, S, S, B, _],
+    [_, B, S, S, S, S, S, S, S, S, B, _],
+    [_, B, S, S, S, S, S, S, S, S, B, _],
+    [_, B, S, S, S, S, S, S, S, S, B, _],
+    [_, B, S, S, S, S, S, S, S, S, B, _],
+    [_, B, S, S, S, S, S, S, S, S, B, _],
+    [_, B, S, S, S, S, S, S, S, S, B, _],
+    [_, B, S, S, S, S, H, S, S, S, B, _],
+    [_, B, D, D, D, D, D, D, D, D, B, _],
+    [_, B, B, B, B, B, B, B, B, B, B, _],
+    [_, _, D, D, D, D, D, D, D, D, _, _],
+    [_, _, D, _, _, _, _, _, _, D, _, _],
+    [_, _, D, _, _, _, _, _, _, D, _, _],
   ]
 })()
 
 export const MICROWAVE_SPRITE: SpriteData = (() => {
-  const S = '#C0C0C0'
-  const D = '#404040'
-  const G = '#333333'
-  const L = '#00FF00'
+  // Microwave - 14x10
+  const S = '#C0C0C0'  // Silver body
+  const D = '#404040'  // Dark panel
+  const G = '#333333'  // Glass
+  const L = '#00FF00'  // Green LED
+  const R = '#FF0000'  // Red light inside
   const _ = ''
   return [
-    [S, S, S, S, S, S],
-    [S, G, G, G, G, S],
-    [S, G, G, G, G, S],
-    [S, D, L, D, D, S],
-    [S, S, S, S, S, S],
+    [S, S, S, S, S, S, S, S, S, S, S, S, S, S],
+    [S, G, G, G, G, G, G, G, G, G, G, G, G, S],
+    [S, G, G, G, G, G, G, G, G, G, G, G, G, S],
+    [S, G, G, R, R, G, G, G, G, R, R, G, G, S],
+    [S, G, G, R, R, G, G, G, G, R, R, G, G, S],
+    [S, G, G, G, G, G, G, G, G, G, G, G, G, S],
+    [S, S, S, S, S, S, S, S, S, S, S, S, S, S],
+    [D, D, D, D, D, D, D, D, D, D, D, D, D, D],
+    [D, L, L, D, D, D, D, D, D, D, D, D, D, D],
+    [D, D, D, D, D, D, D, D, D, D, D, D, D, D],
   ]
 })()
 
 export const TREADMILL_SPRITE: SpriteData = (() => {
-  const G = '#404040'
-  const B = '#1a1a1a'
-  const R = '#C0C0C0'
+  // Large treadmill - 20x10
+  const G = '#404040'  // Gray frame
+  const B = '#1a1a1a'  // Black belt
+  const R = '#C0C0C0'  // Silver rail
+  const L = '#00FF00'  // Green display
   const _ = ''
   return [
-    [G, G, G, G, G, G, G, G],
-    [B, R, R, R, R, R, R, B],
-    [B, R, R, R, R, R, R, B],
-    [B, R, R, R, R, R, R, B],
-    [B, R, R, R, R, R, R, B],
-    [G, G, G, G, G, G, G, G],
+    [_, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, G, _],
+    [_, G, L, L, G, R, R, R, R, R, R, R, R, R, R, G, _, _, _, _],
+    [_, G, G, G, G, R, _, _, _, _, _, _, _, _, R, G, _, _, _, _],
+    [_, _, _, _, G, R, B, B, B, B, B, B, B, B, R, G, _, _, _, _],
+    [_, _, _, _, G, R, B, B, B, B, B, B, B, B, R, G, _, _, _, _],
+    [_, _, _, _, G, R, B, B, B, B, B, B, B, B, R, G, _, _, _, _],
+    [_, _, _, _, G, R, B, B, B, B, B, B, B, B, R, G, _, _, _, _],
+    [_, _, _, _, G, G, G, G, G, G, G, G, G, G, G, G, _, _, _, _],
   ]
 })()
 
 export const DUMBBELL_RACK_SPRITE: SpriteData = (() => {
-  const G = '#404040'
-  const B = '#1a1a1a'
-  const W = '#C0C0C0'
+  // Dumbbell rack - 16x12
+  const G = '#404040'  // Gray rack
+  const B = '#1a1a1a'  // Black handle
+  const W = '#C0C0C0'  // Silver weight
   const _ = ''
   return [
-    [G, G, G, G, G, G],
-    [B, W, W, W, W, B],
-    [B, W, W, W, W, B],
-    [B, W, W, W, W, B],
-    [G, G, G, G, G, G],
+    [_, _, _, G, G, G, G, G, G, G, G, _, _, _, _, _],
+    [_, _, G, W, W, W, W, W, W, W, W, G, _, _, _, _],
+    [_, G, W, B, B, B, B, B, B, B, B, W, G, _, _, _],
+    [_, G, W, B, B, B, B, B, B, B, B, W, G, _, _, _],
+    [_, G, G, G, G, G, G, G, G, G, G, G, G, _, _, _],
+    [_, _, _, G, W, W, W, W, W, W, W, G, _, _, _, _],
+    [_, _, G, W, B, B, B, B, B, B, B, W, G, _, _, _],
+    [_, _, G, W, B, B, B, B, B, B, B, W, G, _, _, _],
+    [_, _, G, G, G, G, G, G, G, G, G, G, G, _, _, _],
+    [_, _, G, _, _, _, _, _, _, _, _, G, _, _, _, _],
+    [_, _, G, _, _, _, _, _, _, _, _, G, _, _, _, _],
   ]
 })()
 
 export const YOGA_MAT_SPRITE: SpriteData = (() => {
-  const B = '#4169E1'
-  const L = '#6495ED'
+  // Yoga mat - 16x8
+  const B = '#4169E1'  // Royal blue
+  const L = '#6495ED'  // Cornflower blue
+  const P = '#FF69B4'  // Pink accent
   const _ = ''
   return [
-    [B, B, B, B, B, B],
-    [B, L, L, L, L, B],
-    [B, L, L, L, L, B],
-    [B, B, B, B, B, B],
+    [_, _, B, B, B, B, B, B, B, B, B, B, B, B, _, _],
+    [_, B, L, L, L, L, L, L, L, L, L, L, L, L, B, _],
+    [B, L, L, P, P, L, L, L, L, L, L, P, P, L, L, B],
+    [B, L, L, P, P, L, L, L, L, L, L, P, P, L, L, B],
+    [B, L, L, L, L, L, L, L, L, L, L, L, L, L, L, B],
+    [_, B, L, L, L, L, L, L, L, L, L, L, L, L, B, _],
+    [_, _, B, B, B, B, B, B, B, B, B, B, B, B, _, _],
+    [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
   ]
 })()
 
@@ -1124,7 +1204,7 @@ export const FURNITURE_CATALOG: Record<string, FurnitureCatalogEntry> = {
   desk_pc: {
     type: 'desk_pc',
     label: 'Desk with PC',
-    footprintW: 2,
+    footprintW: 3,
     footprintH: 2,
     sprite: DESK_WITH_PC_SPRITE,
     isDesk: true,
@@ -1190,7 +1270,7 @@ export const FURNITURE_CATALOG: Record<string, FurnitureCatalogEntry> = {
   whiteboard: {
     type: 'whiteboard',
     label: 'Whiteboard',
-    footprintW: 2,
+    footprintW: 3,
     footprintH: 1,
     sprite: WHITEBOARD_SPRITE,
     isDesk: false,
@@ -1199,8 +1279,8 @@ export const FURNITURE_CATALOG: Record<string, FurnitureCatalogEntry> = {
   sofa: {
     type: 'sofa',
     label: 'Sofa',
-    footprintW: 2,
-    footprintH: 1,
+    footprintW: 3,
+    footprintH: 2,
     sprite: SOFA_SPRITE,
     isDesk: false,
     category: 'seating',
@@ -1208,8 +1288,8 @@ export const FURNITURE_CATALOG: Record<string, FurnitureCatalogEntry> = {
   tv: {
     type: 'tv',
     label: 'TV',
-    footprintW: 2,
-    footprintH: 1,
+    footprintW: 3,
+    footprintH: 2,
     sprite: TV_SPRITE,
     isDesk: false,
     category: 'electronics',
@@ -1217,8 +1297,8 @@ export const FURNITURE_CATALOG: Record<string, FurnitureCatalogEntry> = {
   beanbag: {
     type: 'beanbag',
     label: 'Bean Bag',
-    footprintW: 1,
-    footprintH: 1,
+    footprintW: 2,
+    footprintH: 2,
     sprite: BEANBAG_SPRITE,
     isDesk: false,
     category: 'seating',
@@ -1226,8 +1306,8 @@ export const FURNITURE_CATALOG: Record<string, FurnitureCatalogEntry> = {
   coffee_machine: {
     type: 'coffee_machine',
     label: 'Coffee Machine',
-    footprintW: 1,
-    footprintH: 1,
+    footprintW: 2,
+    footprintH: 2,
     sprite: COFFEE_MACHINE_SPRITE,
     isDesk: false,
     category: 'kitchen',
@@ -1235,7 +1315,7 @@ export const FURNITURE_CATALOG: Record<string, FurnitureCatalogEntry> = {
   dining_table: {
     type: 'dining_table',
     label: 'Dining Table',
-    footprintW: 2,
+    footprintW: 3,
     footprintH: 2,
     sprite: DINING_TABLE_SPRITE,
     isDesk: false,
@@ -1244,8 +1324,8 @@ export const FURNITURE_CATALOG: Record<string, FurnitureCatalogEntry> = {
   fridge: {
     type: 'fridge',
     label: 'Fridge',
-    footprintW: 1,
-    footprintH: 1,
+    footprintW: 2,
+    footprintH: 3,
     sprite: FRIDGE_SPRITE,
     isDesk: false,
     category: 'kitchen',
@@ -1253,8 +1333,8 @@ export const FURNITURE_CATALOG: Record<string, FurnitureCatalogEntry> = {
   microwave: {
     type: 'microwave',
     label: 'Microwave',
-    footprintW: 1,
-    footprintH: 1,
+    footprintW: 2,
+    footprintH: 2,
     sprite: MICROWAVE_SPRITE,
     isDesk: false,
     category: 'kitchen',
@@ -1262,8 +1342,8 @@ export const FURNITURE_CATALOG: Record<string, FurnitureCatalogEntry> = {
   treadmill: {
     type: 'treadmill',
     label: 'Treadmill',
-    footprintW: 2,
-    footprintH: 1,
+    footprintW: 3,
+    footprintH: 2,
     sprite: TREADMILL_SPRITE,
     isDesk: false,
     category: 'gym',
@@ -1271,8 +1351,8 @@ export const FURNITURE_CATALOG: Record<string, FurnitureCatalogEntry> = {
   dumbbell_rack: {
     type: 'dumbbell_rack',
     label: 'Dumbbell Rack',
-    footprintW: 1,
-    footprintH: 1,
+    footprintW: 2,
+    footprintH: 2,
     sprite: DUMBBELL_RACK_SPRITE,
     isDesk: false,
     category: 'gym',
@@ -1280,7 +1360,7 @@ export const FURNITURE_CATALOG: Record<string, FurnitureCatalogEntry> = {
   yoga_mat: {
     type: 'yoga_mat',
     label: 'Yoga Mat',
-    footprintW: 1,
+    footprintW: 2,
     footprintH: 1,
     sprite: YOGA_MAT_SPRITE,
     isDesk: false,

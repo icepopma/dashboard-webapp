@@ -95,11 +95,12 @@ export function createMultiAreaLayout(): OfficeLayout {
   const furniture: PlacedFurniture[] = []
 
   // ── Office Area (6 workstations with PC) ───────────────────────
+  // Spread out more to accommodate larger desks
   for (let i = 0; i < 6; i++) {
-    const col = 2 + (i % 3) * 5
-    const row = i < 3 ? 3 : 7
+    const col = 1 + (i % 3) * 5
+    const row = i < 3 ? 2 : 6
     
-    // Desk with PC (combined)
+    // Desk with PC (combined) - 3x2 tiles
     furniture.push({
       uid: `desk-pc-${i}`,
       type: 'desk_pc',
@@ -120,29 +121,29 @@ export function createMultiAreaLayout(): OfficeLayout {
   furniture.push({
     uid: 'task-board',
     type: 'whiteboard',
-    col: 14,
+    col: 13,
     row: 1,
   })
 
   // Office decorations
-  furniture.push({ uid: 'plant-office-1', type: 'plant', col: 2, row: 1 })
+  furniture.push({ uid: 'plant-office-1', type: 'plant', col: 1, row: 1 })
   furniture.push({ uid: 'plant-office-2', type: 'plant', col: 15, row: 9 })
   furniture.push({ uid: 'cooler-office', type: 'cooler', col: 1, row: 5 })
 
   // ── Rest Area ──────────────────────────────────────────────────
-  // Sofa
+  // Large sofa
   furniture.push({
     uid: 'sofa-1',
     type: 'sofa',
-    col: 19,
-    row: 3,
+    col: 18,
+    row: 2,
   })
 
   // TV on wall
   furniture.push({
     uid: 'tv-1',
     type: 'tv',
-    col: 24,
+    col: 22,
     row: 1,
   })
 
@@ -150,14 +151,14 @@ export function createMultiAreaLayout(): OfficeLayout {
   furniture.push({
     uid: 'beanbag-1',
     type: 'beanbag',
-    col: 20,
-    row: 6,
+    col: 19,
+    row: 5,
   })
   furniture.push({
     uid: 'beanbag-2',
     type: 'beanbag',
-    col: 23,
-    row: 6,
+    col: 22,
+    row: 5,
   })
 
   // Bookshelf
@@ -165,7 +166,7 @@ export function createMultiAreaLayout(): OfficeLayout {
     uid: 'bookshelf-rest',
     type: 'bookshelf',
     col: 25,
-    row: 5,
+    row: 4,
   })
 
   // ── Coffee Area ────────────────────────────────────────────────
@@ -173,7 +174,7 @@ export function createMultiAreaLayout(): OfficeLayout {
   furniture.push({
     uid: 'coffee-machine',
     type: 'coffee_machine',
-    col: 28,
+    col: 27,
     row: 1,
   })
 
@@ -181,8 +182,8 @@ export function createMultiAreaLayout(): OfficeLayout {
   furniture.push({
     uid: 'dining-table',
     type: 'dining_table',
-    col: 30,
-    row: 3,
+    col: 29,
+    row: 2,
   })
 
   // Fridge
@@ -197,16 +198,16 @@ export function createMultiAreaLayout(): OfficeLayout {
   furniture.push({
     uid: 'microwave',
     type: 'microwave',
-    col: 29,
-    row: 1,
+    col: 27,
+    row: 4,
   })
 
   // ── Gym Area ───────────────────────────────────────────────────
-  // Treadmill
+  // Treadmills
   furniture.push({
     uid: 'treadmill-1',
     type: 'treadmill',
-    col: 19,
+    col: 18,
     row: 11,
   })
   furniture.push({
@@ -220,7 +221,7 @@ export function createMultiAreaLayout(): OfficeLayout {
   furniture.push({
     uid: 'dumbbell-rack',
     type: 'dumbbell_rack',
-    col: 25,
+    col: 26,
     row: 11,
   })
 
@@ -228,19 +229,19 @@ export function createMultiAreaLayout(): OfficeLayout {
   furniture.push({
     uid: 'yoga-mat-1',
     type: 'yoga_mat',
-    col: 19,
+    col: 18,
     row: 13,
   })
   furniture.push({
     uid: 'yoga-mat-2',
     type: 'yoga_mat',
-    col: 22,
+    col: 21,
     row: 13,
   })
   furniture.push({
     uid: 'yoga-mat-3',
     type: 'yoga_mat',
-    col: 25,
+    col: 24,
     row: 13,
   })
 
