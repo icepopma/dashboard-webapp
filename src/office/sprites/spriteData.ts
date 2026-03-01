@@ -134,37 +134,40 @@ export const PC_SPRITE: SpriteData = (() => {
   ]
 })()
 
-// Desk with PC on it (combined sprite) - LARGER 24x20
+// Desk with PC - 32x32 pixels (2x2 tiles) - 精致像素风
 export const DESK_WITH_PC_SPRITE: SpriteData = (() => {
-  const W = '#8B6914'  // Wood dark
-  const L = '#A07828'  // Wood light  
-  const S = '#B8922E'  // Wood surface
-  const D = '#6B4E0A'  // Wood leg
-  const B = '#2a2a2a'  // Monitor border
-  const M = '#1a1a1a'  // Monitor frame
-  const G = '#4488ff'  // Screen glow
+  // Monitor
+  const MB = '#1a1a1a'  // Monitor bezel
+  const MS = '#0a0a0a'  // Monitor screen dark
+  const GL = '#5cb3ff'  // Screen glow light
+  const GM = '#3a8ed0'  // Screen glow mid
+  // Desk
+  const DW = '#6B4423'  // Desktop wood dark
+  const DL = '#8B6914'  // Desktop wood light
+  const DD = '#5a3a10'  // Desktop shadow
+  const DG = '#4a2a08'  // Desk leg dark
   const _ = ''
   return [
-    // Monitor (top)
-    [_, _, _, _, B, B, B, B, B, B, B, B, B, B, _, _, _, _, _, _, _, _, _],
-    [_, _, _, B, M, M, M, M, M, M, M, M, M, M, B, _, _, _, _, _, _, _, _],
-    [_, _, _, B, M, G, G, G, G, G, G, G, G, M, B, _, _, _, _, _, _, _, _],
-    [_, _, _, B, M, G, G, G, G, G, G, G, G, M, B, _, _, _, _, _, _, _, _],
-    [_, _, _, B, M, G, G, G, G, G, G, G, G, M, B, _, _, _, _, _, _, _, _],
-    [_, _, _, B, M, M, M, M, M, M, M, M, M, M, B, _, _, _, _, _, _, _, _],
-    [_, _, _, B, B, B, B, B, B, B, B, B, B, B, B, _, _, _, _, _, _, _, _],
-    [_, _, _, _, _, _, _, _, B, B, B, _, _, _, _, _, _, _, _, _, _, _, _],
-    [_, _, _, _, _, _, _, B, B, B, B, B, _, _, _, _, _, _, _, _, _, _, _],
+    // Monitor (top section)
+    [_, _, _, _, MB, MB, MB, MB, MB, MB, MB, MB, MB, MB, MB, MB, MB, MB, MB, MB, MB, _, _, _, _, _, _, _, _, _, _],
+    [_, _, _, MB, MS, MS, MS, MS, MS, MS, MS, MS, MS, MS, MS, MS, MS, MS, MS, MS, MB, _, _, _, _, _, _, _, _, _, _],
+    [_, _, _, MB, MS, GL, GL, GL, GL, GL, GL, GL, GL, GL, GL, GL, GL, GL, GL, MS, MB, _, _, _, _, _, _, _, _, _, _],
+    [_, _, _, MB, MS, GL, GM, GL, GL, GL, GL, GL, GL, GL, GL, GL, GL, GL, GM, MS, MB, _, _, _, _, _, _, _, _, _, _],
+    [_, _, _, MB, MS, GL, GL, GL, GL, GL, GL, GL, GL, GL, GL, GL, GL, GL, GL, MS, MB, _, _, _, _, _, _, _, _, _, _],
+    [_, _, _, MB, MS, GL, GM, GL, GL, GL, GL, GL, GL, GL, GL, GL, GL, GL, GM, MS, MB, _, _, _, _, _, _, _, _, _, _],
+    [_, _, _, MB, MS, MS, MS, MS, MS, MS, MS, MS, MS, MS, MS, MS, MS, MS, MS, MS, MB, _, _, _, _, _, _, _, _, _, _],
+    [_, _, _, MB, MB, MB, MB, MB, MB, MB, MB, MB, MB, MB, MB, MB, MB, MB, MB, MB, MB, _, _, _, _, _, _, _, _, _, _],
+    [_, _, _, _, _, _, _, _, _, _, MB, MB, MB, MB, MB, MB, MB, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
+    [_, _, _, _, _, _, _, _, MB, MB, MB, MB, MB, MB, MB, MB, MB, MB, _, _, _, _, _, _, _, _, _, _, _, _, _],
     // Desk surface
-    [_, _, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, _, _, _, _, _, _],
-    [_, W, L, L, L, L, L, L, L, L, L, L, L, L, L, L, L, W, _, _, _, _, _],
-    [_, W, S, S, S, S, S, S, S, S, S, S, S, S, S, S, S, W, _, _, _, _, _],
-    [_, W, S, S, S, S, S, S, S, S, S, S, S, S, S, S, S, W, D, D, _, _, _],
-    [_, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, W, D, D, _, _, _],
-    // Legs
-    [_, _, D, _, _, _, _, _, _, _, _, _, _, _, _, _, D, _, _, _, _, _, _],
-    [_, _, D, _, _, _, _, _, _, _, _, _, _, _, _, _, D, _, _, _, _, _, _],
-    [_, _, D, _, _, _, _, _, _, _, _, _, _, _, _, _, D, _, _, _, _, _, _],
+    [_, _, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, _, _],
+    [_, DW, DL, DL, DL, DL, DL, DL, DL, DL, DL, DL, DL, DL, DL, DL, DL, DL, DL, DL, DL, DL, DL, DL, DL, DL, DL, DL, DL, DL, DW, _],
+    [_, DW, DD, DD, DD, DD, DD, DD, DD, DD, DD, DD, DD, DD, DD, DD, DD, DD, DD, DD, DD, DD, DD, DD, DD, DD, DD, DD, DD, DD, DW, _],
+    [_, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, DW, _],
+    // Desk legs
+    [_, _, DG, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, DG, _, _],
+    [_, _, DG, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, DG, _, _],
+    [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
   ]
 })()
 
