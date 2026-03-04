@@ -56,7 +56,7 @@ export interface FailureAnalysis {
 }
 
 // Agent Types
-export type AgentType = 'pop' | 'codex' | 'claude' | 'quill' | 'echo' | 'scout' | 'pixel'
+export type AgentType = 'pop' | 'codex' | 'claude' | 'quill' | 'echo' | 'scout' | 'pixel' | 'reel'
 
 export interface AgentConfig {
   name: string

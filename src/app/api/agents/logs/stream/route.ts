@@ -19,7 +19,7 @@ const logBuffers: Map<AgentType, LogEntry[]> = new Map()
 const subscribers: Set<(log: LogEntry) => void> = new Set()
 
 // 初始化日志缓冲区
-const agentTypes: AgentType[] = ['pop', 'codex', 'claude', 'quill', 'echo', 'scout', 'pixel']
+const agentTypes: AgentType[] = ['pop', 'codex', 'claude', 'quill', 'echo', 'scout', 'pixel', 'reel']
 agentTypes.forEach((type) => {
   logBuffers.set(type, [])
 })
@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
 // 模拟日志生成（开发环境）
 if (process.env.NODE_ENV === 'development') {
   setInterval(() => {
-    const agents: AgentType[] = ['pop', 'codex', 'claude', 'quill', 'echo', 'scout', 'pixel']
+    const agents: AgentType[] = ['pop', 'codex', 'claude', 'quill', 'echo', 'scout', 'pixel', 'reel']
     const types: LogEntry['type'][] = ['info', 'success', 'error', 'warning', 'command', 'output']
     const messages = [
       '正在分析任务...',

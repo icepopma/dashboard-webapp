@@ -54,6 +54,11 @@ const AGENT_CONFIGS: Record<AgentType, {
     capabilities: ['design'],
     successRate: 0.75,
   },
+  reel: {
+    name: 'Reel',
+    capabilities: ['design', 'docs'],
+    successRate: 0.80,
+  },
 }
 
 export class PopOrchestrator {

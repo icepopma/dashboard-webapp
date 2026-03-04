@@ -81,7 +81,7 @@ export const OfficeView: React.FC = () => {
     }
 
     // Map API agents to office format with stable numeric IDs
-    const agentTypes = ['pop', 'codex', 'claude', 'quill', 'echo', 'scout', 'pixel'] as AgentType[]
+    const agentTypes = ['pop', 'codex', 'claude', 'quill', 'echo', 'scout', 'pixel', 'reel'] as AgentType[]
     return apiAgents.map((agent, index) => {
       const typeIndex = agentTypes.indexOf(agent.type)
       return {
@@ -99,7 +99,7 @@ export const OfficeView: React.FC = () => {
   const agentMapping = useMemo(() => {
     const map = new Map<number, { type: AgentType; state: AgentRuntimeState }>()
     if (!apiAgents) return map
-    const agentTypes = ['pop', 'codex', 'claude', 'quill', 'echo', 'scout', 'pixel'] as AgentType[]
+    const agentTypes = ['pop', 'codex', 'claude', 'quill', 'echo', 'scout', 'pixel', 'reel'] as AgentType[]
 
     apiAgents.forEach((agent) => {
       const typeIndex = agentTypes.indexOf(agent.type)

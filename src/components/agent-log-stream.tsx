@@ -45,6 +45,7 @@ const agentEmojis: Record<AgentType, string> = {
   echo: '📢',
   scout: '🔍',
   pixel: '🎨',
+  reel: '🎬',
 }
 
 export function AgentLogStream({

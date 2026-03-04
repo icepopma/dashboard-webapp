@@ -62,6 +62,13 @@ export const AGENT_CONFIGS: Record<AgentType, {
     capabilities: ['design', 'ui', 'graphics'],
     model: 'gemini-2.0-flash',
   },
+  reel: {
+    name: 'Reel',
+    role: 'Video Generator',
+    emoji: '🎬',
+    capabilities: ['video', 'generation', 'editing'],
+    model: 'claude-opus-4.5',
+  },
 }
 
 // 智能体运行时状态

@@ -58,6 +58,7 @@ const AGENT_PROVIDER: Record<AgentType, string> = {
   echo: 'anthropic',
   scout: 'openai',
   pixel: 'anthropic',
+  reel: 'anthropic',
 }
 
 // 通信类关键词 - 强制 cheap

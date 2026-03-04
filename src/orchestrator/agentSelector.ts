@@ -80,6 +80,7 @@ function getAreaBonus(agent: AgentType, area: string): number {
     echo: { general: 10, docs: 5, frontend: 0, backend: 0, testing: 0, devops: 0, auth: 0 },
     scout: { general: 15, docs: 10, frontend: 0, backend: 5, testing: 0, devops: 0, auth: 0 },
     pixel: { frontend: 25, docs: 5, general: 5, backend: 0, testing: 0, devops: 0, auth: 0 },
+    reel: { general: 15, docs: 10, frontend: 10, backend: 0, testing: 0, devops: 0, auth: 0 },
   }
   
   return bonuses[agent]?.[area] || 0
@@ -95,6 +96,7 @@ function getComplexityBonus(agent: AgentType, complexity: 'low' | 'medium' | 'hi
     echo: { high: 0, medium: 5, low: 10 },
     scout: { high: 5, medium: 10, low: 5 },
     pixel: { high: 0, medium: 10, low: 15 },
+    reel: { high: 5, medium: 10, low: 15 },
   }
   
   return bonuses[agent]?.[complexity] || 0
@@ -167,6 +169,11 @@ export function getAgentConfig(
       command: 'claude',
       model: 'claude-sonnet-4',
       args: ['--model', 'claude-sonnet-4', '--dangerously-skip-permissions'],
+    },
+    reel: {
+      command: 'claude',
+      model: 'claude-opus-4.5',
+      args: ['--model', 'claude-opus-4.5', '--dangerously-skip-permissions'],
     },
   }
 

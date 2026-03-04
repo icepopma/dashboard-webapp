@@ -300,6 +300,10 @@ export class AgentLauncher extends EventEmitter {
         command: 'claude',
         args: ['--model', 'claude-sonnet-4', '--dangerously-skip-permissions', '-p'],
       },
+      reel: {
+        command: 'claude',
+        args: ['--model', 'claude-opus-4.5', '--dangerously-skip-permissions', '-p'],
+      },
     }
     
     return configs[agent]
