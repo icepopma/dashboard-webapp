@@ -11,15 +11,15 @@ import {
 import { useI18n } from '@/lib/i18n'
 import { CreateProjectTaskDialog } from '@/components/create-project-task-dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { AgentTasksTab } from './tabs/agent-tasks-tab'
-import { AgentMonitorTab } from './tabs/agent-monitor-tab'
+import { AgentTasksTab } from './tasks-view/tabs/agent-tasks-tab'
+import { AgentMonitorTab } from './tasks-view/tabs/agent-monitor-tab'
 
 type ViewMode = 'kanban' | 'list'
 type SortBy = 'priority' | 'due_date' | 'created_at' | 'status'
 type SmartFilter = 'all' | 'today' | 'overdue' | 'mine'
 
 // Import the original TasksView content as a component
-import { TasksViewContent } from './tabs/my-tasks-tab'
+import { TasksViewContent } from './tasks-view/tabs/my-tasks-tab'
 
 export function TasksView() {
   const { t } = useI18n()

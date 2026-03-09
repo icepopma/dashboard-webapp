@@ -61,7 +61,7 @@ export function AgentMonitorTab({ onRefresh }: AgentMonitorTabProps) {
             successRate: agentTasks.length > 0 
               ? Math.round((completedTasks.length / agentTasks.length) * 100)
               : 0,
-            status: currentTask ? 'busy' : 'online'
+            status: (currentTask ? 'busy' : 'online') as 'online' | 'busy' | 'offline'
           };
         });
         
