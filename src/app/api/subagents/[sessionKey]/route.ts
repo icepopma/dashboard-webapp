@@ -63,7 +63,7 @@ export const GET = apiHandler(async (request) => {
   // 提取最后的 assistant 消息作为结果
   let lastAssistantMessage = null
   let status = 'running'
-  let duration = 0
+  const duration = 0
 
   for (let i = messages.length - 1; i >= 0; i--) {
     const msg = messages[i]

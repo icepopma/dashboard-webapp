@@ -118,9 +118,9 @@ export async function initializeSupabaseData() {
 
 // 迁移内存数据到 Supabase
 export async function migrateMemoryToSupabase(memoryData: {
-  ideas?: any[]
-  tasks?: any[]
-  projects?: any[]
+  ideas?: unknown[]
+  tasks?: unknown[]
+  projects?: unknown[]
 }) {
   console.log('📦 开始迁移内存数据...')
 

@@ -10,7 +10,9 @@ import type { AgentType } from '@/orchestrator/types'
 /**
  * POST /api/tasks/[id]/complete - 标记任务完成
  */
-export const POST = apiHandler(async (request, { params }) => {
+export const POST = apiHandler(async (request, context) => {
+  const { params } = context ?? {}
+  if (!params) throw AppError.badRequest('Missing route params')
   const { id } = await params
   const body = await parseJsonBody<{
     agent?: string

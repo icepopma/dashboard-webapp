@@ -22,7 +22,7 @@ export const PUT = apiHandler(async (request, context) => {
     order_index?: number
   }>(request)
 
-  const updates: Record<string, any> = {}
+  const updates: Record<string, unknown> = {}
 
   if (body.title !== undefined) {
     const title = sanitize.string(body.title)

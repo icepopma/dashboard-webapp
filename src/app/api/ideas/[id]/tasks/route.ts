@@ -47,10 +47,11 @@ export async function GET(
     }
 
     return NextResponse.json({ tasks: data, count: data?.length || 0 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Unexpected error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { error: 'Internal server error', details: errorMessage },
       { status: 500 }
     );
   }
@@ -97,10 +98,11 @@ export async function POST(
     }
 
     return NextResponse.json({ task: data }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Unexpected error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { error: 'Internal server error', details: errorMessage },
       { status: 500 }
     );
   }

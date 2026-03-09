@@ -11,7 +11,9 @@ import type { AgentType } from '@/orchestrator/types'
 /**
  * GET /api/agents/[type]/sessions - 获取智能体会话
  */
-export const GET = apiHandler(async (request, { params }) => {
+export const GET = apiHandler(async (request, context) => {
+  const { params } = context ?? {}
+  if (!params) throw AppError.badRequest('Missing route params')
   const { type } = await params
 
   if (!type || !AGENT_CONFIGS[type as AgentType]) {

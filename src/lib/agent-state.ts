@@ -2,7 +2,7 @@
 // Agent State Manager - 智能体状态管理
 // ─────────────────────────────────────────────────────────────────
 
-import type { AgentType, AgentSession, AgentStatus } from '@/orchestrator/types'
+import type { AgentType, AgentSession } from '@/orchestrator/types'
 import { realtimeBus } from '@/lib/realtime-bus'
 
 // 智能体配置

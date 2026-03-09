@@ -5,9 +5,9 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { AppError, createErrorResponse, ErrorResponse, SuccessResponse } from './errors'
 
-type HandlerFunction<T = any> = (
+type HandlerFunction<T = unknown> = (
   request: NextRequest,
-  context?: any
+  context?: RouteHandlerContext
 ) => Promise<T>
 
 type RouteHandlerContext = { params: Promise<Record<string, string>> }
@@ -67,7 +67,7 @@ export async function parseJsonBody<T>(request: NextRequest): Promise<T> {
   try {
     const body = await request.json()
     return body as T
-  } catch (error) {
+  } catch {
     throw AppError.badRequest('请求体格式无效，请提供有效的 JSON')
   }
 }

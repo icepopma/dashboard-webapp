@@ -34,18 +34,18 @@ export function CalendarView() {
       const data = await res.json()
       
       if (data.tasks && data.tasks.length > 0) {
-        const calendarTasks: CalendarTask[] = data.tasks.map((task: any, index: number) => ({
-          id: task.id || `task-${index}-${task.name || 'unknown'}`,
-          name: task.name,
-          title: task.name, // For display
-          type: task.type || 'cron',
-          status: task.status,
-          scheduledFor: task.nextRun || new Date().toISOString(),
-          nextRun: task.nextRun,
-          lastRun: task.lastRun,
-          schedule: task.schedule,
-          agent: task.agent,
-          target: task.target,
+        const calendarTasks: CalendarTask[] = data.tasks.map((task: Record<string, unknown>, index: number) => ({
+          id: (task.id as string) || `task-${index}-${(task.name as string) || 'unknown'}`,
+          name: task.name as string,
+          title: task.name as string, // For display
+          type: (task.type as 'cron' | 'scheduled' | 'oneTime') || 'cron',
+          status: task.status as 'pending' | 'running' | 'completed' | 'error',
+          scheduledFor: (task.nextRun as string) || new Date().toISOString(),
+          nextRun: task.nextRun as string | null,
+          lastRun: task.lastRun as string | null,
+          schedule: task.schedule as string,
+          agent: task.agent as string | undefined,
+          target: task.target as string | undefined,
         }))
         setTasks(calendarTasks)
       } else {

@@ -105,25 +105,36 @@ function createSynthSound(audioContext: AudioContext, type: SoundType, volume: n
 export function useSound(options: UseSoundOptions = {}): UseSoundReturn {
   const { enabled: initialEnabled = true, volume: initialVolume = 0.7 } = options
 
-  const [enabled, setEnabledState] = useState(initialEnabled)
-  const [volume, setVolumeState] = useState(initialVolume)
-  const audioContextRef = useRef<AudioContext | null>(null)
-
-  // 从 localStorage 恢复设置
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-
+  // 从 localStorage 初始化（使用 state initializer function）
+  const [enabled, setEnabledState] = useState(() => {
+    if (typeof window === 'undefined') return initialEnabled
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
       if (saved) {
-        const { enabled: savedEnabled, volume: savedVolume } = JSON.parse(saved)
-        if (typeof savedEnabled === 'boolean') setEnabledState(savedEnabled)
-        if (typeof savedVolume === 'number') setVolumeState(savedVolume)
+        const { enabled: savedEnabled } = JSON.parse(saved)
+        if (typeof savedEnabled === 'boolean') return savedEnabled
       }
-    } catch (e) {
+    } catch {
       // ignore
     }
-  }, [])
+    return initialEnabled
+  })
+
+  const [volume, setVolumeState] = useState(() => {
+    if (typeof window === 'undefined') return initialVolume
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved) {
+        const { volume: savedVolume } = JSON.parse(saved)
+        if (typeof savedVolume === 'number') return savedVolume
+      }
+    } catch {
+      // ignore
+    }
+    return initialVolume
+  })
+
+  const audioContextRef = useRef<AudioContext | null>(null)
 
   // 保存设置到 localStorage
   useEffect(() => {

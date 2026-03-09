@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { User, RotateCcw, Plus, Shield, Clock } from 'lucide-react'
+import { RotateCcw, Plus, Clock } from 'lucide-react'
 import { useI18n } from '@/lib/i18n'
 
 interface Person {
@@ -46,12 +46,21 @@ const peopleData: Person[] = [
 
 export function PeopleView() {
   const { t } = useI18n()
-  const [people, setPeople] = useState<Person[]>(peopleData)
+  const [people] = useState<Person[]>(peopleData)
   const [loading, setLoading] = useState(true)
+  const [currentTime, setCurrentTime] = useState(() => Date.now())
 
   useEffect(() => {
     // 模拟加载
     setTimeout(() => setLoading(false), 500)
+  }, [])
+
+  useEffect(() => {
+    // 每分钟更新一次当前时间
+    const interval = setInterval(() => {
+      setCurrentTime(Date.now())
+    }, 60000)
+    return () => clearInterval(interval)
   }, [])
 
   const getRoleBadge = (role: string) => {
@@ -72,7 +81,7 @@ export function PeopleView() {
   }
 
   const formatLastActive = (dateStr: string) => {
-    const diff = Date.now() - new Date(dateStr).getTime()
+    const diff = currentTime - new Date(dateStr).getTime()
     if (diff < 60000) return t('people.justNow')
     if (diff < 3600000) return `${Math.floor(diff / 60000)} 分钟前`
     return `${Math.floor(diff / 3600000)} 小时前`

@@ -15,7 +15,11 @@ export interface KeyboardShortcut {
 
 export function useKeyboardShortcut(shortcuts: KeyboardShortcut[]) {
   const shortcutsRef = useRef(shortcuts)
-  shortcutsRef.current = shortcuts
+  
+  // 更新 ref（在 effect 中）
+  useEffect(() => {
+    shortcutsRef.current = shortcuts
+  }, [shortcuts])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

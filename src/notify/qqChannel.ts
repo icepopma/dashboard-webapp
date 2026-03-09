@@ -94,7 +94,7 @@ export class QQChannelNotifier {
   /**
    * 格式化字段
    */
-  private formatFields(data: any): any[] {
+  private formatFields(data: any): unknown[] {
     return Object.entries(data).map(([key, value]) => ({
       name: key,
       value: String(value),

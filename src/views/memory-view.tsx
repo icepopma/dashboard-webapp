@@ -10,7 +10,7 @@ import { useI18n } from '@/lib/i18n'
 interface MemoryEntry {
   id: string
   key: string
-  value: any
+  value: Record<string, unknown>
   type: 'success' | 'failure' | 'context' | 'decision'
   timestamp: string
 }
@@ -18,7 +18,7 @@ interface MemoryEntry {
 export function MemoryView() {
   const { t } = useI18n()
   const [memories, setMemories] = useState<MemoryEntry[]>([])
-  const [activities, setActivities] = useState<any[]>([])
+  const [activities, setActivities] = useState<Record<string, unknown>[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'memory' | 'logs' | 'knowledge' | 'graph'>('memory')
 
@@ -31,7 +31,7 @@ export function MemoryView() {
       setActivities(rawActivities)
       
       // 从活动日志生成记忆条目
-      const memoryEntries: MemoryEntry[] = rawActivities.map((act: any) => {
+      const memoryEntries: MemoryEntry[] = rawActivities.map((act: Record<string, unknown>) => {
         const typeMap: Record<string, 'success' | 'failure' | 'context' | 'decision'> = {
           complete: 'success',
           pr: 'success',
@@ -41,11 +41,11 @@ export function MemoryView() {
           general: 'context',
         }
         return {
-          id: act.id,
-          key: `${act.type || 'activity'}:${act.agent}:${act.action?.substring(0, 20)}`,
+          id: act.id as string,
+          key: `${(act.type as string) || 'activity'}:${act.agent as string}:${(act.action as string)?.substring(0, 20)}`,
           value: { action: act.action, metadata: act.metadata },
-          type: typeMap[act.type] || 'context',
-          timestamp: act.created_at,
+          type: typeMap[act.type as string] || 'context',
+          timestamp: act.created_at as string,
         }
       })
       setMemories(memoryEntries)
@@ -148,14 +148,14 @@ export function MemoryView() {
         {activeTab === 'logs' && (
           <div className="space-y-2">
             {activities.map(activity => (
-              <div key={activity.id} className="p-3 rounded-lg bg-muted/30">
+              <div key={activity.id as string} className="p-3 rounded-lg bg-muted/30">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-sm">{activity.agent}</span>
+                  <span className="font-medium text-sm">{activity.agent as string}</span>
                   <span className="text-xs text-muted-foreground">
-                    {new Date(activity.timestamp).toLocaleString('zh-CN')}
+                    {new Date(activity.timestamp as string).toLocaleString('zh-CN')}
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground mt-1">{activity.action}</p>
+                <p className="text-sm text-muted-foreground mt-1">{activity.action as string}</p>
               </div>
             ))}
           </div>

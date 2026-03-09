@@ -64,18 +64,18 @@ export function useRealtime<T>(
       eventSource.onmessage = (event) => {
         try {
           const message: RealtimeMessage = JSON.parse(event.data)
-          
+
           if (message.type === 'ping') return
-          
-          const parsedData = options?.parser 
-            ? options.parser(message.data) 
+
+          const parsedData = options?.parser
+            ? options.parser(message.data)
             : message.data
-          
+
           setData(parsedData)
-          setState(prev => ({ 
-            ...prev, 
+          setState(prev => ({
+            ...prev,
             lastUpdate: new Date(),
-            error: null 
+            error: null
           }))
         } catch (err) {
           console.error('Failed to parse realtime message:', err)
@@ -83,24 +83,69 @@ export function useRealtime<T>(
       }
 
       eventSource.onerror = () => {
-        setState(prev => ({ 
-          ...prev, 
-          connected: false, 
-          error: 'Connection lost' 
+        setState(prev => ({
+          ...prev,
+          connected: false,
+          error: 'Connection lost'
         }))
-        
+
         // 5秒后重连
         if (reconnectTimeoutRef.current) {
           clearTimeout(reconnectTimeoutRef.current)
         }
         reconnectTimeoutRef.current = setTimeout(() => {
-          connect()
+          // 重新连接 - 直接在这里实现重连逻辑
+          if (eventSourceRef.current) {
+            eventSourceRef.current.close()
+          }
+
+          try {
+            const newEventSource = new EventSource(`/api/realtime?channel=${channel}`)
+            eventSourceRef.current = newEventSource
+
+            newEventSource.onopen = () => {
+              setState(prev => ({ ...prev, connected: true, error: null }))
+            }
+
+            newEventSource.onmessage = (event) => {
+              try {
+                const message: RealtimeMessage = JSON.parse(event.data)
+                if (message.type === 'ping') return
+
+                const parsedData = options?.parser
+                  ? options.parser(message.data)
+                  : message.data
+
+                setData(parsedData)
+                setState(prev => ({
+                  ...prev,
+                  lastUpdate: new Date(),
+                  error: null
+                }))
+              } catch (err) {
+                console.error('Failed to parse realtime message:', err)
+              }
+            }
+
+            newEventSource.onerror = () => {
+              setState(prev => ({
+                ...prev,
+                connected: false,
+                error: 'Connection lost'
+              }))
+            }
+          } catch (err) {
+            setState(prev => ({
+              ...prev,
+              error: 'Failed to reconnect'
+            }))
+          }
         }, 5000)
       }
     } catch (err) {
-      setState(prev => ({ 
-        ...prev, 
-        error: 'Failed to connect' 
+      setState(prev => ({
+        ...prev,
+        error: 'Failed to connect'
       }))
     }
   }, [channel, enabled, options?.parser])

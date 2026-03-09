@@ -70,15 +70,15 @@ export async function scanSentryErrors(config: SentryScannerConfig): Promise<Tas
       return []
     }
 
-    const issues: any[] = await response.json()
-    
+    const issues = await response.json() as Record<string, unknown>[]
+
     // 过滤掉低频错误
     const significantIssues = issues.filter(
-      issue => issue.count >= minCount
+      (issue) => (issue.count as number) >= minCount
     )
-    
+
     // 转换为任务
-    return significantIssues.map(issue => convertErrorToTask(issue, organization, projectSlug))
+    return significantIssues.map((issue) => convertErrorToTask(issue, organization, projectSlug))
   } catch (error) {
     console.error('[Sentry Scanner] Error scanning:', error)
     return []

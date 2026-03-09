@@ -44,9 +44,19 @@ interface PopTasks {
   pending: number
 }
 
+interface AgentSession {
+  id: string
+  agent: string
+  taskId: string
+  status: 'starting' | 'running' | 'completed' | 'failed' | 'paused'
+  startTime: string
+  endTime?: string
+  result?: unknown
+}
+
 interface AgentData {
   agents: AgentState[]
-  activeSessions: any[]
+  activeSessions: AgentSession[]
   popTasks: PopTasks
   timestamp: string
 }
@@ -320,9 +330,9 @@ export function PopView() {
   }
 
   const agents = Array.isArray(data?.agents) ? data.agents : []
-  const popAgent = agents.find((a: any) => a?.type === 'pop')
-  const subAgents = agents.filter((a: any) => a?.type !== 'pop')
-  const workingAgents = agents.filter((a: any) => a?.status === 'working')
+  const popAgent = agents.find((a) => a?.type === 'pop')
+  const subAgents = agents.filter((a) => a?.type !== 'pop')
+  const workingAgents = agents.filter((a) => a?.status === 'working')
   const totalAgents = agents.length
 
   return (

@@ -20,7 +20,7 @@ export async function getApprovals(status?: string) {
   return data
 }
 
-export async function updateApproval(id: string, updates: Record<string, any>) {
+export async function updateApproval(id: string, updates: Record<string, unknown>) {
   const { data, error } = await supabase
     .from('approvals')
     .update({ ...updates, updated_at: new Date().toISOString() })
@@ -40,7 +40,7 @@ export async function getCouncilVotes(status?: string) {
   return data
 }
 
-export async function updateCouncilVote(id: string, updates: Record<string, any>) {
+export async function updateCouncilVote(id: string, updates: Record<string, unknown>) {
   const { data, error } = await supabase
     .from('council_votes')
     .update(updates)
@@ -60,7 +60,7 @@ export async function getProjects(status?: string) {
   return data
 }
 
-export async function createProject(project: Record<string, any>) {
+export async function createProject(project: Record<string, unknown>) {
   const { data, error } = await supabase
     .from('projects')
     .insert(project)
@@ -70,7 +70,7 @@ export async function createProject(project: Record<string, any>) {
   return data
 }
 
-export async function updateProject(id: string, updates: Record<string, any>) {
+export async function updateProject(id: string, updates: Record<string, unknown>) {
   const { data, error } = await supabase
     .from('projects')
     .update({ ...updates, updated_at: new Date().toISOString() })
@@ -90,7 +90,7 @@ export async function getActivityLogs(limit = 20, agent?: string) {
   return data
 }
 
-export async function createActivityLog(log: { agent: string; action: string; type?: string; metadata?: any }) {
+export async function createActivityLog(log: { agent: string; action: string; type?: string; metadata?: unknown }) {
   const { data, error } = await supabase
     .from('activity_logs')
     .insert(log)
@@ -109,7 +109,7 @@ export async function getAgentSessions(status?: string) {
   return data
 }
 
-export async function createAgentSession(session: Record<string, any>) {
+export async function createAgentSession(session: Record<string, unknown>) {
   const { data, error } = await supabase
     .from('agent_sessions')
     .insert(session)
@@ -119,7 +119,7 @@ export async function createAgentSession(session: Record<string, any>) {
   return data
 }
 
-export async function updateAgentSession(sessionId: string, updates: Record<string, any>) {
+export async function updateAgentSession(sessionId: string, updates: Record<string, unknown>) {
   const { data, error } = await supabase
     .from('agent_sessions')
     .update(updates)
@@ -149,7 +149,7 @@ export async function getIdeaById(id: string) {
   return data
 }
 
-export async function createIdea(idea: Record<string, any>) {
+export async function createIdea(idea: Record<string, unknown>) {
   const { data, error } = await supabase
     .from('ideas')
     .insert(idea)
@@ -159,7 +159,7 @@ export async function createIdea(idea: Record<string, any>) {
   return data
 }
 
-export async function updateIdea(id: string, updates: Record<string, any>) {
+export async function updateIdea(id: string, updates: Record<string, unknown>) {
   const { data, error } = await supabase
     .from('ideas')
     .update({ ...updates, updated_at: new Date().toISOString() })
@@ -194,7 +194,7 @@ export async function getTaskById(id: string) {
   return data
 }
 
-export async function createTask(task: Record<string, any>) {
+export async function createTask(task: Record<string, unknown>) {
   const { data, error } = await supabase
     .from('tasks')
     .insert(task)
@@ -204,7 +204,7 @@ export async function createTask(task: Record<string, any>) {
   return data
 }
 
-export async function updateTask(id: string, updates: Record<string, any>) {
+export async function updateTask(id: string, updates: Record<string, unknown>) {
   const { data, error } = await supabase
     .from('tasks')
     .update({ ...updates, updated_at: new Date().toISOString() })

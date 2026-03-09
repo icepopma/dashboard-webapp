@@ -4,8 +4,23 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 
+// 类型定义
+interface Project {
+  id: string
+  name: string
+  description: string
+  status: 'active' | 'paused' | 'completed' | 'planning'
+  progress: number
+  color: string
+  startDate: string
+  targetDate: string
+  tasks: { total: number; completed: number }
+  members: string[]
+  lastUpdate: string
+}
+
 // 内存存储
-const projects: any[] = [
+const projects: Project[] = [
   {
     id: 'proj-001',
     name: 'Dashboard Webapp',

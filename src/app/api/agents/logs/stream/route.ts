@@ -11,7 +11,7 @@ export interface LogEntry {
   agent: AgentType
   type: 'info' | 'success' | 'error' | 'warning' | 'command' | 'output'
   message: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 // 内存中的日志存储（生产环境应使用数据库或消息队列）

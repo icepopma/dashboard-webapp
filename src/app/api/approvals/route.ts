@@ -4,8 +4,25 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 
+// 类型定义
+interface Approval {
+  id: string
+  title: string
+  type: string
+  risk: 'low' | 'medium' | 'high'
+  requester: string
+  description: string
+  created_at: string
+  status: 'pending' | 'approved' | 'rejected'
+  approved_at?: string
+  approved_by?: string
+  rejected_at?: string
+  rejected_by?: string
+  rejection_reason?: string
+}
+
 // 内存存储（降级使用）
-const memoryApprovals: any[] = [
+const memoryApprovals: Approval[] = [
   {
     id: 'apr-001',
     title: '部署 Dashboard 到生产环境',
@@ -64,7 +81,7 @@ export async function GET(request: NextRequest) {
         if (!error && data) {
           return NextResponse.json({
             approvals: data,
-            pending: data.filter((a: any) => a.status === 'pending').length,
+            pending: data.filter((a: { status: string }) => a.status === 'pending').length,
             source: 'supabase',
             timestamp: new Date().toISOString(),
           })
@@ -98,7 +115,7 @@ export async function POST(request: NextRequest) {
       try {
         const supabase = await getSupabase()
         if (supabase) {
-          const updates: any = { status: action === 'approve' ? 'approved' : 'rejected' }
+          const updates: Partial<Approval> = { status: action === 'approve' ? 'approved' : 'rejected' }
           if (action === 'approve') {
             updates.approved_at = new Date().toISOString()
             updates.approved_by = 'Matt'

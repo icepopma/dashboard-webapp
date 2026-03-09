@@ -2,13 +2,13 @@
 // Realtime Bus - 简单的发布/订阅系统
 // ─────────────────────────────────────────────────────────────────
 
-type EventHandler = (data: any) => void
-
-interface RealtimeEvent {
+export interface RealtimeEvent {
   type: 'agents' | 'tasks' | 'ideas' | 'activity'
-  data: any
+  data: unknown
   timestamp: Date
 }
+
+type EventHandler = (event: RealtimeEvent) => void
 
 class RealtimeBus {
   private handlers: Map<string, Set<EventHandler>> = new Map()
@@ -27,9 +27,9 @@ class RealtimeBus {
   }
 
   // 发布事件
-  publish(eventType: string, data: any): void {
+  publish(eventType: string, data: unknown): void {
     const event: RealtimeEvent = {
-      type: eventType as any,
+      type: eventType as 'agents' | 'tasks' | 'ideas' | 'activity',
       data,
       timestamp: new Date(),
     }
@@ -47,22 +47,22 @@ class RealtimeBus {
   }
 
   // 发布智能体更新
-  publishAgentsUpdate(data: any): void {
+  publishAgentsUpdate(data: unknown): void {
     this.publish('agents', data)
   }
 
   // 发布任务更新
-  publishTasksUpdate(data: any): void {
+  publishTasksUpdate(data: unknown): void {
     this.publish('tasks', data)
   }
 
   // 发布想法更新
-  publishIdeasUpdate(data: any): void {
+  publishIdeasUpdate(data: unknown): void {
     this.publish('ideas', data)
   }
 
   // 发布活动更新
-  publishActivityUpdate(data: any): void {
+  publishActivityUpdate(data: unknown): void {
     this.publish('activity', data)
   }
 }

@@ -60,7 +60,8 @@ export function useTheme() {
 
     mediaQuery.addEventListener('change', handleChange)
     return () => mediaQuery.removeEventListener('change', handleChange)
-  }, [theme])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return {
     theme,

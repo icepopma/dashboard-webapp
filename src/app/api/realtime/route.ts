@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────────────────────────
 
 import { NextRequest } from 'next/server'
-import { realtimeBus } from '@/lib/realtime-bus'
+import { realtimeBus, type RealtimeEvent } from '@/lib/realtime-bus'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -41,7 +41,7 @@ if (typeof window === 'undefined') {
   const eventTypes = ['agents', 'tasks', 'ideas', 'activity'] as const
   
   eventTypes.forEach(type => {
-    realtimeBus.subscribe(type, (event) => {
+    realtimeBus.subscribe(type, (event: RealtimeEvent) => {
       broadcastToChannel(type, {
         type,
         data: event.data,

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -18,7 +18,7 @@ export interface LogEntry {
   agent: AgentType
   type: 'info' | 'success' | 'error' | 'warning' | 'command' | 'output'
   message: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 interface AgentLogStreamProps {
@@ -55,13 +55,33 @@ export function AgentLogStream({
   autoScroll = true,
 }: AgentLogStreamProps) {
   const [logs, setLogs] = useState<LogEntry[]>([])
-  const [filteredLogs, setFilteredLogs] = useState<LogEntry[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [filterType, setFilterType] = useState<string | null>(null)
   const [isPaused, setIsPaused] = useState(false)
   const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set())
   const logContainerRef = useRef<HTMLDivElement>(null)
   const wsRef = useRef<EventSource | null>(null)
+
+  // 使用 useMemo 计算过滤后的日志（派生状态）
+  const filteredLogs = useMemo(() => {
+    let filtered = logs
+
+    // 按类型过滤
+    if (filterType) {
+      filtered = filtered.filter((log) => log.type === filterType)
+    }
+
+    // 按搜索词过滤
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter((log) =>
+        log.message.toLowerCase().includes(query) ||
+        log.agent.toLowerCase().includes(query)
+      )
+    }
+
+    return filtered
+  }, [logs, filterType, searchQuery])
 
   // 连接到日志流
   useEffect(() => {
@@ -101,27 +121,6 @@ export function AgentLogStream({
     }
   }, [agent, isPaused])
 
-  // 过滤日志
-  useEffect(() => {
-    let filtered = logs
-
-    // 按类型过滤
-    if (filterType) {
-      filtered = filtered.filter((log) => log.type === filterType)
-    }
-
-    // 按搜索词过滤
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      filtered = filtered.filter((log) =>
-        log.message.toLowerCase().includes(query) ||
-        log.agent.toLowerCase().includes(query)
-      )
-    }
-
-    setFilteredLogs(filtered)
-  }, [logs, filterType, searchQuery])
-
   // 自动滚动到底部
   useEffect(() => {
     if (autoScroll && logContainerRef.current && !isPaused) {
@@ -145,7 +144,6 @@ export function AgentLogStream({
   // 清空日志
   const handleClearLogs = () => {
     setLogs([])
-    setFilteredLogs([])
   }
 
   // 导出日志

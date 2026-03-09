@@ -14,7 +14,9 @@ type AgentAction = typeof VALID_ACTIONS[number]
 /**
  * POST /api/agents/[type]/[action] - 执行智能体操作
  */
-export const POST = apiHandler(async (request, { params }) => {
+export const POST = apiHandler(async (request, context) => {
+  const { params } = context ?? {}
+  if (!params) throw AppError.badRequest('Missing route params')
   const { type, action } = await params
 
   // 验证智能体类型

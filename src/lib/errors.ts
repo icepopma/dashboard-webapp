@@ -10,13 +10,13 @@ export class AppError extends Error {
     public code: string,
     message: string,
     public statusCode: number = 500,
-    public details?: any
+    public details?: unknown
   ) {
     super(message)
     this.name = 'AppError'
   }
 
-  static badRequest(message: string, details?: any) {
+  static badRequest(message: string, details?: unknown) {
     return new AppError('BAD_REQUEST', message, 400, details)
   }
 
@@ -32,19 +32,19 @@ export class AppError extends Error {
     return new AppError('FORBIDDEN', message, 403)
   }
 
-  static conflict(message: string, details?: any) {
+  static conflict(message: string, details?: unknown) {
     return new AppError('CONFLICT', message, 409, details)
   }
 
-  static validation(message: string, details?: any) {
+  static validation(message: string, details?: unknown) {
     return new AppError('VALIDATION_ERROR', message, 422, details)
   }
 
-  static internal(message: string = '服务器内部错误', details?: any) {
+  static internal(message: string = '服务器内部错误', details?: unknown) {
     return new AppError('INTERNAL_ERROR', message, 500, details)
   }
 
-  static database(message: string = '数据库操作失败', details?: any) {
+  static database(message: string = '数据库操作失败', details?: unknown) {
     return new AppError('DATABASE_ERROR', message, 500, details)
   }
 
@@ -61,7 +61,7 @@ export interface ErrorResponse {
   error: {
     code: string
     message: string
-    details?: any
+    details?: unknown
     timestamp: string
     path?: string
   }
@@ -70,7 +70,7 @@ export interface ErrorResponse {
 /**
  * API 成功响应格式
  */
-export interface SuccessResponse<T = any> {
+export interface SuccessResponse<T = unknown> {
   success: true
   data: T
   timestamp: string
@@ -97,7 +97,7 @@ export function createErrorResponse(error: unknown, path?: string): ErrorRespons
 
   // Supabase 错误处理
   if (error && typeof error === 'object' && 'code' in error) {
-    const supabaseError = error as any
+    const supabaseError = error as { code?: string; message?: string }
     return {
       success: false,
       error: {
@@ -124,7 +124,7 @@ export function createErrorResponse(error: unknown, path?: string): ErrorRespons
 /**
  * Supabase 错误消息映射
  */
-function getSupabaseErrorMessage(error: any): string {
+function getSupabaseErrorMessage(error: { code?: string; message?: string }): string {
   const code = error.code
   
   const errorMessages: Record<string, string> = {
@@ -136,14 +136,14 @@ function getSupabaseErrorMessage(error: any): string {
     'P0001': '数据库操作失败',
   }
 
-  return errorMessages[code] || error.message || '数据库操作失败'
+  return errorMessages[code || ''] || error.message || '数据库操作失败'
 }
 
 /**
  * 验证工具
  */
 export const validators = {
-  required: (value: any, fieldName: string) => {
+  required: (value: unknown, fieldName: string) => {
     if (value === undefined || value === null || value === '') {
       throw AppError.validation(`${fieldName} 不能为空`)
     }
@@ -182,17 +182,17 @@ export const validators = {
  * 输入清理
  */
 export const sanitize = {
-  string: (value: any): string => {
+  string: (value: unknown): string => {
     if (typeof value !== 'string') return ''
     return value.trim()
   },
 
-  number: (value: any): number | null => {
+  number: (value: unknown): number | null => {
     const num = Number(value)
     return isNaN(num) ? null : num
   },
 
-  boolean: (value: any): boolean => {
+  boolean: (value: unknown): boolean => {
     if (typeof value === 'boolean') return value
     if (value === 'true' || value === '1') return true
     return false

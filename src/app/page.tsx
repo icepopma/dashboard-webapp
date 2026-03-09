@@ -1,24 +1,35 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, lazy, Suspense } from 'react'
 import { Sidebar, NavItemId } from '@/components/sidebar'
-import { KanbanBoard } from '@/components/kanban/kanban-board'
-import { TasksView } from '@/views/tasks-view'
-import { PipelineView } from '@/views/pipeline-view'
-import { CalendarView } from '@/views/calendar-view'
-import { MemoryView } from '@/views/memory-view'
-import { TeamView } from '@/views/team-view'
-import { OfficeView } from '@/views/office-view'
-import { HomeView } from '@/views/home-view'
-import { ApprovalsView } from '@/views/approvals-view'
-import { CouncilView } from '@/views/council-view'
-import { ProjectsView } from '@/views/projects-view'
-import { DocsView } from '@/views/docs-view'
-import { PeopleView } from '@/views/people-view'
-import { PopView } from '@/views/pop-view'
 import { useKeyboardShortcut, navShortcuts } from '@/hooks/use-keyboard-shortcut'
 import { KeyboardShortcutsHelp, KeyboardShortcutsButton } from '@/components/keyboard-shortcuts-help'
 import { Toaster } from '@/components/ui/toaster'
+
+// Lazy load views for better initial load performance
+const TasksView = lazy(() => import('@/views/tasks-view').then(m => ({ default: m.TasksView })))
+const PipelineView = lazy(() => import('@/views/pipeline-view').then(m => ({ default: m.PipelineView })))
+const CalendarView = lazy(() => import('@/views/calendar-view').then(m => ({ default: m.CalendarView })))
+const MemoryView = lazy(() => import('@/views/memory-view').then(m => ({ default: m.MemoryView })))
+const TeamView = lazy(() => import('@/views/team-view').then(m => ({ default: m.TeamView })))
+const OfficeView = lazy(() => import('@/views/office-view').then(m => ({ default: m.OfficeView })))
+const HomeView = lazy(() => import('@/views/home-view').then(m => ({ default: m.HomeView })))
+const ApprovalsView = lazy(() => import('@/views/approvals-view').then(m => ({ default: m.ApprovalsView })))
+const CouncilView = lazy(() => import('@/views/council-view').then(m => ({ default: m.CouncilView })))
+const ProjectsView = lazy(() => import('@/views/projects-view').then(m => ({ default: m.ProjectsView })))
+const DocsView = lazy(() => import('@/views/docs-view').then(m => ({ default: m.DocsView })))
+const PeopleView = lazy(() => import('@/views/people-view').then(m => ({ default: m.PeopleView })))
+const PopView = lazy(() => import('@/views/pop-view').then(m => ({ default: m.PopView })))
+
+// Loading fallback component
+const ViewLoader = () => (
+  <div className="flex-1 flex items-center justify-center">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+      <p className="text-muted-foreground">Loading...</p>
+    </div>
+  </div>
+)
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState<NavItemId>('pop')
@@ -53,36 +64,57 @@ export default function HomePage() {
   useKeyboardShortcut([...navigationShortcuts, ...helpShortcuts])
 
   const renderContent = () => {
+    let ViewComponent;
+    
     switch (activeTab) {
       case 'pop':
-        return <PopView />
+        ViewComponent = PopView;
+        break;
       case 'home':
-        return <HomeView />
+        ViewComponent = HomeView;
+        break;
       case 'tasks':
-        return <TasksView />
+        ViewComponent = TasksView;
+        break;
       case 'content':
-        return <PipelineView />
+        ViewComponent = PipelineView;
+        break;
       case 'calendar':
-        return <CalendarView />
+        ViewComponent = CalendarView;
+        break;
       case 'memory':
-        return <MemoryView />
+        ViewComponent = MemoryView;
+        break;
       case 'team':
-        return <TeamView />
+        ViewComponent = TeamView;
+        break;
       case 'office':
-        return <OfficeView />
+        ViewComponent = OfficeView;
+        break;
       case 'approvals':
-        return <ApprovalsView />
+        ViewComponent = ApprovalsView;
+        break;
       case 'council':
-        return <CouncilView />
+        ViewComponent = CouncilView;
+        break;
       case 'projects':
-        return <ProjectsView />
+        ViewComponent = ProjectsView;
+        break;
       case 'docs':
-        return <DocsView />
+        ViewComponent = DocsView;
+        break;
       case 'people':
-        return <PeopleView />
+        ViewComponent = PeopleView;
+        break;
       default:
-        return <PopView />
+        ViewComponent = PopView;
     }
+    
+    return (
+      <Suspense fallback={<ViewLoader />}>
+        <ViewComponent />
+      </Suspense>
+    );
   }
 
   return (

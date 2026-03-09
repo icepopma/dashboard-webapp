@@ -28,9 +28,19 @@ interface AgentState {
   }
 }
 
+interface AgentSession {
+  id: string
+  agent: string
+  taskId: string
+  status: 'starting' | 'running' | 'completed' | 'failed' | 'paused'
+  startTime: string
+  endTime?: string
+  result?: unknown
+}
+
 interface AgentData {
   agents: AgentState[]
-  activeSessions: any[]
+  activeSessions: AgentSession[]
   popTasks: { active: number; completed: number; pending: number }
   timestamp: string
 }
@@ -79,7 +89,7 @@ export function HomeView() {
         const data = await ideasRes.json()
         const ideas = Array.isArray(data?.ideas) ? data.ideas : (Array.isArray(data) ? data : [])
         totalIdeas = ideas.length
-        withPlan = ideas.filter((i: any) => i.has_plan).length
+        withPlan = ideas.filter((i: { has_plan?: boolean }) => i.has_plan).length
       }
 
       // 获取 tasks 统计
@@ -90,7 +100,7 @@ export function HomeView() {
         const data = await tasksRes.json()
         const tasks = Array.isArray(data?.tasks) ? data.tasks : (Array.isArray(data) ? data : [])
         totalTasks = tasks.length
-        completedTasks = tasks.filter((t: any) => t.status === 'done' || t.status === 'completed').length
+        completedTasks = tasks.filter((t: { status?: string }) => t.status === 'done' || t.status === 'completed').length
       }
 
       setStats({

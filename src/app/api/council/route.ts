@@ -4,8 +4,26 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 
+// 类型定义
+interface VoteOption {
+  id: string
+  label: string
+  votes: string[]
+}
+
+interface Vote {
+  id: string
+  title: string
+  description: string
+  options: VoteOption[]
+  status: 'active' | 'closed'
+  createdBy: string
+  createdAt: string
+  deadline: string
+}
+
 // 内存存储
-const votes: any[] = [
+const votes: Vote[] = [
   {
     id: 'vote-001',
     title: '选择前端框架：React vs Vue',
@@ -54,12 +72,12 @@ export async function POST(request: NextRequest) {
     }
     
     // 移除该投票者之前的投票
-    vote.options.forEach((opt: any) => {
+    vote.options.forEach((opt) => {
       opt.votes = opt.votes.filter((v: string) => v !== voter)
     })
     
     // 添加新投票
-    const option = vote.options.find((o: any) => o.id === optionId)
+    const option = vote.options.find((o) => o.id === optionId)
     if (option) {
       option.votes.push(voter)
     }

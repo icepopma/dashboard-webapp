@@ -224,14 +224,14 @@ export async function getIdeaById(id: string) {
   return data
 }
 
-export async function createIdea(idea: Record<string, any>) {
+export async function createIdea(idea: Record<string, unknown>) {
   if (!supabase) return null
   const { data, error } = await supabase.from('ideas').insert(idea).select().single()
   if (error) throw error
   return data
 }
 
-export async function updateIdea(id: string, updates: Record<string, any>) {
+export async function updateIdea(id: string, updates: Record<string, unknown>) {
   if (!supabase) return null
   const { data, error } = await supabase
     .from('ideas')

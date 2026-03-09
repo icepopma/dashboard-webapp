@@ -5,6 +5,11 @@
 import type { PRInfo, PRReview, CIStatus } from '../orchestrator/types'
 import { spawn } from 'child_process'
 
+interface CheckRun {
+  conclusion?: string
+  status?: string
+}
+
 export class PRChecker {
   /**
    * 获取 PR 信息
@@ -153,13 +158,13 @@ export class PRChecker {
   /**
    * 映射 CI 状态
    */
-  private mapCIStatus(checks: any[]): CIStatus['status'] {
+  private mapCIStatus(checks: CheckRun[]): CIStatus['status'] {
     if (!checks || checks.length === 0) return 'pending'
-    
+
     const allSuccess = checks.every(c => c.conclusion === 'SUCCESS')
     const anyFailed = checks.some(c => c.conclusion === 'FAILURE')
     const anyRunning = checks.some(c => c.status === 'IN_PROGRESS')
-    
+
     if (anyFailed) return 'failed'
     if (anyRunning) return 'running'
     if (allSuccess) return 'passed'

@@ -61,13 +61,13 @@ export async function scanGitHubIssues(config: GitHubScannerConfig): Promise<Tas
       return []
     }
 
-    const issues: any[] = await response.json()
-    
+    const issues = await response.json() as Record<string, unknown>[]
+
     // 过滤掉 PR（GitHub API 会返回 PR 在 issues 端点）
-    const actualIssues = issues.filter(issue => !issue.pull_request)
-    
+    const actualIssues = issues.filter((issue) => !issue.pull_request)
+
     // 转换为任务
-    return actualIssues.map(issue => convertIssueToTask(issue, owner, repo))
+    return actualIssues.map((issue) => convertIssueToTask(issue, owner, repo))
   } catch (error) {
     console.error('[GitHub Scanner] Error scanning issues:', error)
     return []

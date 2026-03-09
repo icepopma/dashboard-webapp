@@ -88,7 +88,7 @@ export interface AgentSession {
 export interface MemoryEntry {
   id: string
   key: string
-  value: any
+  value: unknown
   type: 'success' | 'failure' | 'context' | 'decision' | 'preference'
   tags: string[]
   metadata: {
@@ -114,7 +114,7 @@ export interface Notification {
   type: 'task_complete' | 'task_failed' | 'pr_ready' | 'human_needed' | 'daily_summary'
   title: string
   message: string
-  data?: any
+  data?: unknown
   priority: 'low' | 'medium' | 'high'
 }
 

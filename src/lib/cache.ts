@@ -8,19 +8,19 @@ interface CacheEntry<T> {
 }
 
 class SimpleCache {
-  private cache = new Map<string, CacheEntry<any>>()
+  private cache = new Map<string, CacheEntry<unknown>>()
   private defaultTTL = 60000 // 1 minute default
 
   get<T>(key: string): T | null {
     const entry = this.cache.get(key)
     if (!entry) return null
-    
+
     if (Date.now() - entry.timestamp > entry.ttl) {
       this.cache.delete(key)
       return null
     }
-    
-    return entry.data
+
+    return entry.data as T
   }
 
   set<T>(key: string, data: T, ttl: number = this.defaultTTL): void {
