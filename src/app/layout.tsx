@@ -3,7 +3,7 @@ import { DM_Sans, Inter } from "next/font/google";
 import "./globals.css";
 import { I18nProvider } from "@/lib/i18n";
 import { QueryProvider } from "@/lib/query-provider";
-import { RealtimeProvider } from "@/lib/realtime-provider";
+// import { RealtimeProvider } from "@/lib/realtime-provider";
 import { Toaster } from "@/components/ui/sonner";
 
 const dmSans = DM_Sans({
@@ -35,10 +35,8 @@ export default function RootLayout({
       >
         <I18nProvider>
           <QueryProvider>
-            <RealtimeProvider>
-              {children}
-              <Toaster position="top-right" richColors />
-            </RealtimeProvider>
+            {children}
+            <Toaster position="top-right" richColors />
           </QueryProvider>
         </I18nProvider>
       </body>

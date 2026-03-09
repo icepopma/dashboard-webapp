@@ -63,59 +63,38 @@ export default function HomePage() {
   // 注册所有快捷键
   useKeyboardShortcut([...navigationShortcuts, ...helpShortcuts])
 
-  const renderContent = () => {
-    let ViewComponent;
-    
+  const renderContent = useCallback(() => {
     switch (activeTab) {
       case 'pop':
-        ViewComponent = PopView;
-        break;
+        return <PopView />
       case 'home':
-        ViewComponent = HomeView;
-        break;
+        return <HomeView />
       case 'tasks':
-        ViewComponent = TasksView;
-        break;
+        return <TasksView />
       case 'content':
-        ViewComponent = PipelineView;
-        break;
+        return <PipelineView />
       case 'calendar':
-        ViewComponent = CalendarView;
-        break;
+        return <CalendarView />
       case 'memory':
-        ViewComponent = MemoryView;
-        break;
+        return <MemoryView />
       case 'team':
-        ViewComponent = TeamView;
-        break;
+        return <TeamView />
       case 'office':
-        ViewComponent = OfficeView;
-        break;
+        return <OfficeView />
       case 'approvals':
-        ViewComponent = ApprovalsView;
-        break;
+        return <ApprovalsView />
       case 'council':
-        ViewComponent = CouncilView;
-        break;
+        return <CouncilView />
       case 'projects':
-        ViewComponent = ProjectsView;
-        break;
+        return <ProjectsView />
       case 'docs':
-        ViewComponent = DocsView;
-        break;
+        return <DocsView />
       case 'people':
-        ViewComponent = PeopleView;
-        break;
+        return <PeopleView />
       default:
-        ViewComponent = PopView;
+        return <PopView />
     }
-    
-    return (
-      <Suspense fallback={<ViewLoader />}>
-        <ViewComponent />
-      </Suspense>
-    );
-  }
+  }, [activeTab])
 
   return (
     <main className="h-screen flex bg-background text-foreground overflow-hidden">
@@ -126,7 +105,9 @@ export default function HomePage() {
           <KeyboardShortcutsButton onClick={() => setShowHelp(true)} />
         </div>
         
-        {renderContent()}
+        <Suspense fallback={<ViewLoader />}>
+          {renderContent()}
+        </Suspense>
       </section>
 
       {/* 快捷键帮助弹窗 */}
