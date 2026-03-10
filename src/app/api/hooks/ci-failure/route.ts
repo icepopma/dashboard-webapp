@@ -31,9 +31,11 @@ export async function POST(request: NextRequest) {
       repository: body.workflow_run.repository.full_name,
       branch: body.workflow_run.head_branch,
       commit_sha: body.workflow_run.head_sha,
-      status: 'failed',
+      status: 'failed' as const,
       message: `Workflow ${body.workflow_run.name || 'unknown'} failed`,
       timestamp: body.workflow_run.created_at,
+      workflow: body.workflow_run.name,
+      logs_url: body.workflow_run.html_url,
     };
 
     // Log structured event (GP-003)
@@ -43,12 +45,15 @@ export async function POST(request: NextRequest) {
       branch: ciFailure.branch,
     });
 
-    // TODO: Inject to agent session (will be implemented with feat-002)
-    // For now, just acknowledge receipt
+    // Inject to agent session via OpenClaw Hook Ingress
+    const sessionId = `ci-failure:${ciFailure.ci_run_id}`;
+    const injectionResult = await ciFailureService.injectToAgent(ciFailure, sessionId);
+
     return NextResponse.json({
-      success: true,
-      message: `CI failure received: ${ciFailure.ci_run_id}`,
+      success: injectionResult.success,
+      message: injectionResult.message,
       ci_failure: ciFailure,
+      session_id: injectionResult.sessionId,
     });
 
   } catch (error) {

@@ -7,6 +7,15 @@ export interface InjectionResult {
 }
 
 export class CIFailureService {
+  private openclawHookUrl: string;
+  private openclawHookToken: string;
+
+  constructor() {
+    // OpenClaw Hook Ingress configuration
+    this.openclawHookUrl = process.env.OPENCLAW_HOOK_URL || 'http://localhost:18789/hooks/agent';
+    this.openclawHookToken = process.env.OPENCLAW_HOOK_TOKEN || '';
+  }
+
   formatForAgent(failure: CIFailure): string {
     const parts = [
       '# CI Failure Detected',
@@ -42,12 +51,50 @@ export class CIFailureService {
   async injectToAgent(failure: CIFailure, sessionId: string): Promise<InjectionResult> {
     const message = this.formatForAgent(failure);
 
-    // TODO: Implement actual injection via OpenClaw Hook Ingress
-    // For now, return success
+    // If OpenClaw Hook Token is configured, inject via Hook Ingress
+    if (this.openclawHookToken) {
+      try {
+        const response = await fetch(this.openclawHookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.openclawHookToken}`,
+          },
+          body: JSON.stringify({
+            message: message,
+            agentId: 'codex', // Route to coding agent
+            sessionKey: `ci-failure:${failure.ci_run_id}`,
+            wakeMode: 'now',
+            deliver: true,
+            channel: 'discord',
+            to: '1477517730713305273', // #research-scout
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`OpenClaw Hook failed: ${response.status}`);
+        }
+
+        return {
+          success: true,
+          sessionId: `ci-failure:${failure.ci_run_id}`,
+          message: `CI failure injected to agent via OpenClaw Hook`,
+        };
+      } catch (error) {
+        console.error('[CI Failure Injection Error]', error);
+        return {
+          success: false,
+          sessionId,
+          message: `Failed to inject CI failure: ${error}`,
+        };
+      }
+    }
+
+    // Fallback: Return success (TODO mode)
     return {
       success: true,
       sessionId,
-      message: `CI failure injected to session ${sessionId}`,
+      message: `CI failure injected to session ${sessionId} (TODO: OpenClaw Hook not configured)`,
     };
   }
 }
